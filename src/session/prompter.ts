@@ -1,0 +1,31 @@
+import inquirer from 'inquirer';
+
+export async function promptReveal(title: string): Promise<void> {
+  await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'reveal',
+      message: `Review: "${title}" — Press Enter to reveal`,
+    },
+  ]);
+}
+
+export async function promptQuality(): Promise<number> {
+  const { quality } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'quality',
+      message: 'How well did you recall this note?',
+      choices: [
+        { name: '0 — Complete blackout', value: 0 },
+        { name: '1 — Incorrect, but remembered seen before', value: 1 },
+        { name: '2 — Incorrect, but correct felt easy', value: 2 },
+        { name: '3 — Recalled with serious difficulty', value: 3 },
+        { name: '4 — Recalled with some hesitation', value: 4 },
+        { name: '5 — Perfect recall', value: 5 },
+      ],
+      default: 3,
+    },
+  ]);
+  return quality;
+}
