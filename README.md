@@ -59,3 +59,12 @@ The session will:
 4. Update scheduling automatically
 
 5. Show session statistics
+
+## Statistics
+
+View learning statistics:
+
+```bash
+olivine stats /path/to/vault
+olivine due /path/to/vault
+```
