@@ -5,12 +5,14 @@ import { OLIVINE_DIR, CONFIG_FILENAME, DEFAULT_DAILY_REVIEW_LIMIT } from './cons
 export interface OlivineConfig {
   vaultPath: string;
   dailyReviewLimit: number;
+  cardsDir: string;
 }
 
 export function defaultConfig(): OlivineConfig {
   return {
     vaultPath: '',
     dailyReviewLimit: DEFAULT_DAILY_REVIEW_LIMIT,
+    cardsDir: '',
   };
 }
 
@@ -22,9 +24,9 @@ export async function loadConfig(vaultPath: string): Promise<OlivineConfig> {
     return {
       vaultPath: parsed.vaultPath ?? vaultPath,
       dailyReviewLimit: parsed.dailyReviewLimit ?? DEFAULT_DAILY_REVIEW_LIMIT,
+      cardsDir: parsed.cardsDir ?? '',
     };
   } catch {
-    // Config file doesn't exist; use provided vaultPath as default
     return { ...defaultConfig(), vaultPath };
   }
 }

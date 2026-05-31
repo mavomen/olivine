@@ -20,4 +20,7 @@ export function validateConfig(config: unknown): void {
   if (typeof cfg.dailyReviewLimit !== 'number' || cfg.dailyReviewLimit < 1) {
     throw new Error('Config dailyReviewLimit must be a positive integer');
   }
+  if (cfg.cardsDir !== undefined && typeof cfg.cardsDir !== 'string') {
+    throw new Error('Config cardsDir must be a string');
+  }
 }
