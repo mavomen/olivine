@@ -2,69 +2,77 @@
 
 A local-first CLI spaced repetition tool for Obsidian vaults.
 
-## Status
+## Features
 
-Early development. Core tooling is being built.
+- Scan Obsidian vaults for markdown notes
+- Schedule reviews using the SM-2 algorithm
+- Interactive terminal review sessions
+- Track review history in SQLite
+- View statistics and daily streaks
 
-## Development
+## Installation
 
 ```bash
+git clone https://github.com/yourusername/olivine
+cd olivine
 npm install
 npm run build
-npm test
 ```
-
-## License
-MIT
 
 ## Usage
 
 ### Initialize a vault
 
 ```bash
-olivine init /path/to/obsidian-vault
+node dist/index.js init /path/to/obsidian-vault
 ```
 
 ### Scan vault for notes
 
 ```bash
-olivine scan /path/to/obsidian-vault
+node dist/index.js scan /path/to/vault
+```
+
+### Start a review session
+
+```bash
+node dist/index.js review /path/to/vault
+```
+
+### View statistics
+
+```bash
+node dist/index.js stats /path/to/vault
+node dist/index.js due /path/to/vault
+```
+
+## Architecture
+
+```
+olivine/
+├── src/
+│   ├── commands/       CLI command implementations
+│   ├── database/       SQLite connection, migrations
+│   ├── models/         Note, Review, Scheduling repositories
+│   ├── vault/          Markdown scanner and parser
+│   ├── algorithms/     SM-2 implementation
+│   ├── session/        Interactive review loop
+│   ├── scheduling/     Scheduling service
+│   ├── stats/          Statistics calculator
+│   ├── config/         Configuration management
+│   └── utils/          Shared utilities
+└── tests/              Unit and integration tests
 ```
 
 ## SM-2 Algorithm
 
-Olivine uses the SM-2 spaced repetition algorithm with the following defaults:
+Olivine uses SM-2 with:
 
 - Initial ease factor: 2.5
 - Minimum ease factor: 1.3
-- Quality scores: 0–5 (0=complete blackout, 3=hard, 4=good, 5=easy)
-- Failing a review (score < 3) resets repetitions and sets interval to 1 day
+- Quality scores: 0–5 (0=complete blackout, 5=perfect recall)
+- Failing a review resets repetitions and sets interval to 1 day
 
-## Reviewing
+## License
 
-Start an interactive review session:
-
-```bash
-olivine review /path/to/vault
-```
-
-The session will:
-
-1. Load due notes
-
-2. Prompt you to reveal each note
-
-3. Ask for a quality score (0-5)
-
-4. Update scheduling automatically
-
-5. Show session statistics
-
-## Statistics
-
-View learning statistics:
-
-```bash
-olivine stats /path/to/vault
-olivine due /path/to/vault
-```
+MIT

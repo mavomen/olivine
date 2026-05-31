@@ -3,6 +3,7 @@ import { Database } from 'sql.js';
 import { scanVault } from '../vault/scanner';
 import { parseMarkdown } from '../vault/parser';
 import { insertNote, getAllNotes, deleteNoteByPath } from '../models/note';
+import { initializeScheduling } from '../scheduling/service';
 import type { NoteRow } from '../models/note';
 import { logger } from '../utils/logger';
 
@@ -10,7 +11,6 @@ export async function syncVault(vaultPath: string, db: Database): Promise<{ adde
   const scannedFiles = await scanVault(vaultPath);
   const existingNotes = getAllNotes(db);
   const existingPaths = new Set(existingNotes.map((n) => n.path));
-
   const scannedPaths = new Set(scannedFiles.map((f) => f.relativePath));
 
   let added = 0;
@@ -27,8 +27,14 @@ export async function syncVault(vaultPath: string, db: Database): Promise<{ adde
       created_at: stat.birthtime.toISOString().split('T')[0]!,
       updated_at: stat.mtime.toISOString().split('T')[0]!,
     };
-    if (!existingPaths.has(file.relativePath)) added++;
-    insertNote(db, note);
+    if (!existingPaths.has(file.relativePath)) {
+      added++;
+      insertNote(db, note);
+      initializeScheduling(db, note.id);
+    } else {
+      // Update content and metadata for existing notes
+      insertNote(db, note);
+    }
   }
 
   let removed = 0;
