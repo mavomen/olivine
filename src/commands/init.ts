@@ -3,7 +3,8 @@ import { getDb, saveDb, closeDb } from '../database/connection';
 import { bootstrapDatabase } from '../database/bootstrap';
 import { ensureOlivineDir } from '../config/initializer';
 import { saveConfig, defaultConfig } from '../config/loader';
-import { logger } from '../utils/logger';
+import { handleError } from '../utils/error';
+import { validateVaultPath } from '../utils/validation';
 
 export function buildInitCommand(): Command {
   return new Command('init')
@@ -11,16 +12,16 @@ export function buildInitCommand(): Command {
     .argument('<vaultPath>', 'Path to the Obsidian vault')
     .action(async (vaultPath: string) => {
       try {
+        await validateVaultPath(vaultPath);
         await ensureOlivineDir(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
         saveDb(vaultPath);
         closeDb();
         await saveConfig(vaultPath, defaultConfig());
-        logger.info(`Initialized Olivine in ${vaultPath}`);
+        console.log(`Initialized Olivine in ${vaultPath}`);
       } catch (err) {
-        logger.error(`Failed to initialize: ${String(err)}`);
-        process.exit(1);
+        handleError('Failed to initialize', err);
       }
     });
 }

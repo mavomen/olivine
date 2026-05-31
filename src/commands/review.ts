@@ -4,6 +4,8 @@ import { bootstrapDatabase } from '../database/bootstrap';
 import { loadDueSession } from '../session/loader';
 import { runReviewSession } from '../session/runner';
 import { loadConfig } from '../config/loader';
+import { handleError } from '../utils/error';
+import { validateVaultPath } from '../utils/validation';
 import { logger } from '../utils/logger';
 
 export function buildReviewCommand(): Command {
@@ -12,6 +14,7 @@ export function buildReviewCommand(): Command {
     .argument('<vaultPath>', 'Path to the Obsidian vault')
     .action(async (vaultPath: string) => {
       try {
+        await validateVaultPath(vaultPath);
         const config = await loadConfig(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
@@ -27,8 +30,7 @@ export function buildReviewCommand(): Command {
         saveDb(vaultPath);
         closeDb();
       } catch (err) {
-        logger.error(`Review failed: ${String(err)}`);
-        process.exit(1);
+        handleError('Review failed', err);
       }
     });
 }

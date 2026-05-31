@@ -8,7 +8,7 @@ const program = new Command();
 program
   .name('olivine')
   .description('A local-first CLI spaced repetition tool for Obsidian vaults')
-  .version('0.0.0');
+  .version('0.1.0');
 
 registerCommands(program);
 
