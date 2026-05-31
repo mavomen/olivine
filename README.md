@@ -16,3 +16,17 @@ npm test
 
 ## License
 MIT
+
+## Usage
+
+### Initialize a vault
+
+```bash
+olivine init /path/to/obsidian-vault
+```
+
+### Scan vault for notes
+
+```bash
+olivine scan /path/to/obsidian-vault
+```

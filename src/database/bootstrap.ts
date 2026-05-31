@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { Database } from 'sql.js';
 import { runMigrations } from './migrations';
 import * as m001 from './migrations/001_notes.sql';
 import * as m002 from './migrations/002_reviews.sql';
@@ -10,6 +10,6 @@ const migrations = [
   { id: m003.id, name: m003.name, sql: m003.sql },
 ];
 
-export function bootstrapDatabase(db: Database.Database): void {
+export function bootstrapDatabase(db: Database): void {
   runMigrations(db, migrations);
 }

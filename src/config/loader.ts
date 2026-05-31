@@ -24,8 +24,8 @@ export async function loadConfig(vaultPath: string): Promise<OlivineConfig> {
       dailyReviewLimit: parsed.dailyReviewLimit ?? DEFAULT_DAILY_REVIEW_LIMIT,
     };
   } catch {
-    // Config file doesn not exist or is invalid; return defaults
-    return defaultConfig();
+    // Config file doesn't exist; use provided vaultPath as default
+    return { ...defaultConfig(), vaultPath };
   }
 }
 

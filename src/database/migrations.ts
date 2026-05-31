@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { Database } from 'sql.js';
 
 interface Migration {
   id: number;
@@ -6,8 +6,8 @@ interface Migration {
   sql: string;
 }
 
-export function runMigrations(db: Database.Database, migrations: Migration[]): void {
-  db.exec(`
+export function runMigrations(db: Database, migrations: Migration[]): void {
+  db.run(`
     CREATE TABLE IF NOT EXISTS _migrations (
       id INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
@@ -15,23 +15,20 @@ export function runMigrations(db: Database.Database, migrations: Migration[]): v
     )
   `);
 
-  const applied = new Set(
-    db
-      .prepare('SELECT id FROM _migrations')
-      .all()
-      .map((row: unknown) => (row as { id: number }).id),
-  );
+  const result = db.exec('SELECT id FROM _migrations');
+  const applied = new Set<number>();
+  if (result.length > 0) {
+    const rows = result[0]!.values;
+    for (const row of rows) {
+      applied.add(row[0] as number);
+    }
+  }
 
   const pending = migrations.filter((m) => !applied.has(m.id));
   if (pending.length === 0) return;
 
-  const insert = db.prepare('INSERT INTO _migrations (id, name) VALUES (?, ?)');
-  const runAll = db.transaction(() => {
-    for (const migration of pending) {
-      db.exec(migration.sql);
-      insert.run(migration.id, migration.name);
-    }
-  });
-
-  runAll();
+  for (const migration of pending) {
+    db.run(migration.sql);
+    db.run('INSERT INTO _migrations (id, name) VALUES (?, ?)', [migration.id, migration.name]);
+  }
 }

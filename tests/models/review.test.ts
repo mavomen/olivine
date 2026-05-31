@@ -1,33 +1,29 @@
-import Database from 'better-sqlite3';
+import { createMemoryDb } from '../test-utils';
 import { bootstrapDatabase } from '../../src/database/bootstrap';
 import { insertNote } from '../../src/models/note';
 import { insertReview, getReviewsForNote, getReviewCountToday, getTotalReviewCount } from '../../src/models/review';
 import type { NoteRow } from '../../src/models/note';
 
 describe('review repository', () => {
-  let db: Database.Database;
+  let db: any;
 
-  beforeEach(() => {
-    db = new Database(':memory:');
+  beforeEach(async () => {
+    db = await createMemoryDb();
     bootstrapDatabase(db);
+    const sampleNote: NoteRow = {
+      id: 'abc123',
+      path: '/vault/notes/alpha.md',
+      title: 'Alpha',
+      content: 'Some content',
+      word_count: 2,
+      created_at: '2025-01-01',
+      updated_at: '2025-01-02',
+    };
+    insertNote(db, sampleNote);
   });
 
   afterEach(() => {
     db.close();
-  });
-
-  const sampleNote: NoteRow = {
-    id: 'abc123',
-    path: '/vault/notes/alpha.md',
-    title: 'Alpha',
-    content: 'Some content',
-    word_count: 2,
-    created_at: '2025-01-01',
-    updated_at: '2025-01-02',
-  };
-
-  beforeEach(() => {
-    insertNote(db, sampleNote);
   });
 
   it('should insert a review and retrieve it', () => {
@@ -39,7 +35,7 @@ describe('review repository', () => {
 
     const reviews = getReviewsForNote(db, 'abc123');
     expect(reviews).toHaveLength(1);
-    expect(reviews[0]?.quality).toBe(4);
+    expect(reviews[0]!.quality).toBe(4);
   });
 
   it('should count reviews today', () => {

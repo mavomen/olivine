@@ -1,14 +1,14 @@
-import Database from 'better-sqlite3';
+import { createMemoryDb } from '../test-utils';
 import { runMigrations } from '../../src/database/migrations';
 import * as m001 from '../../src/database/migrations/001_notes.sql';
 import * as m002 from '../../src/database/migrations/002_reviews.sql';
 import * as m003 from '../../src/database/migrations/003_scheduling.sql';
 
 describe('migration runner', () => {
-  let db: Database.Database;
+  let db: any;
 
-  beforeEach(() => {
-    db = new Database(':memory:');
+  beforeEach(async () => {
+    db = await createMemoryDb();
   });
 
   afterEach(() => {
@@ -21,41 +21,35 @@ describe('migration runner', () => {
     { id: m003.id, name: m003.name, sql: m003.sql },
   ];
 
+  function getTableNames(): string[] {
+    const res = db.exec("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name");
+    if (res.length === 0) return [];
+    return res[0].values.map((row: any) => row[0]);
+  }
+
   it('should create all tables when run on fresh database', () => {
     runMigrations(db, migrations);
-
-    const tables = db
-      .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-      .all() as { name: string }[];
-
-    const tableNames = tables.map((t) => t.name);
-    expect(tableNames).toContain('notes');
-    expect(tableNames).toContain('reviews');
-    expect(tableNames).toContain('scheduling');
-    expect(tableNames).toContain('_migrations');
+    const names = getTableNames();
+    expect(names).toContain('notes');
+    expect(names).toContain('reviews');
+    expect(names).toContain('scheduling');
+    expect(names).toContain('_migrations');
   });
 
   it('should record applied migrations', () => {
     runMigrations(db, migrations);
-
-    const applied = db
-      .prepare('SELECT id, name FROM _migrations ORDER BY id')
-      .all() as { id: number; name: string }[];
-
-    expect(applied).toHaveLength(3);
-    expect(applied[0]).toEqual({ id: 1, name: 'create_notes' });
-    expect(applied[1]).toEqual({ id: 2, name: 'create_reviews' });
-    expect(applied[2]).toEqual({ id: 3, name: 'create_scheduling' });
+    const res = db.exec('SELECT id, name FROM _migrations ORDER BY id');
+    const rows = res[0].values;
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toEqual([1, 'create_notes']);
+    expect(rows[1]).toEqual([2, 'create_reviews']);
+    expect(rows[2]).toEqual([3, 'create_scheduling']);
   });
 
-  it('should be idempotent — no errors on re-run', () => {
+  it('should be idempotent', () => {
     runMigrations(db, migrations);
     expect(() => runMigrations(db, migrations)).not.toThrow();
-
-    const applied = db
-      .prepare('SELECT COUNT(*) as count FROM _migrations')
-      .get() as { count: number };
-
-    expect(applied.count).toBe(3);
+    const res = db.exec('SELECT COUNT(*) as count FROM _migrations');
+    expect(res[0].values[0][0]).toBe(3);
   });
 });
