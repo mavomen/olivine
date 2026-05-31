@@ -76,3 +76,21 @@ Olivine uses SM-2 with:
 ## License
 
 MIT
+
+## TUI Review Mode
+
+For a full-screen terminal experience, use:
+
+```bash
+node dist/index.js review /path/to/vault --tui
+```
+
+This provides a keyboard-driven card interface:
+
+SPACE to reveal the answer
+
+0-5 to rate recall quality
+
+q to quit
+
+Falls back to auto-review in non-interactive environments (CI, pipes).
