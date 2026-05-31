@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { Database } from 'sql.js';
 
 export interface SchedulingRow {
   note_id: string;
@@ -9,27 +9,52 @@ export interface SchedulingRow {
   last_reviewed: string | null;
 }
 
-export function insertScheduling(db: Database.Database, row: SchedulingRow): void {
-  db.prepare(
+export function insertScheduling(db: Database, row: SchedulingRow): void {
+  db.run(
     `INSERT OR REPLACE INTO scheduling (note_id, ease_factor, repetitions, interval_days, due_date, last_reviewed)
      VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(row.note_id, row.ease_factor, row.repetitions, row.interval_days, row.due_date, row.last_reviewed);
+    [row.note_id, row.ease_factor, row.repetitions, row.interval_days, row.due_date, row.last_reviewed],
+  );
 }
 
-export function getSchedulingForNote(db: Database.Database, noteId: string): SchedulingRow | undefined {
-  return db.prepare('SELECT * FROM scheduling WHERE note_id = ?').get(noteId) as SchedulingRow | undefined;
+function getOneScheduling(db: Database, sql: string, params: unknown[]): SchedulingRow | undefined {
+  const stmt = db.prepare(sql);
+  stmt.bind(params as any[]);
+  if (stmt.step()) {
+    const row = stmt.getAsObject() as SchedulingRow;
+    stmt.free();
+    return row;
+  }
+  stmt.free();
+  return undefined;
 }
 
-export function getAllScheduling(db: Database.Database): SchedulingRow[] {
-  return db.prepare('SELECT * FROM scheduling').all() as SchedulingRow[];
+function getAllSchedulingRows(db: Database, sql: string, params: unknown[] = []): SchedulingRow[] {
+  const stmt = db.prepare(sql);
+  stmt.bind(params as any[]);
+  const rows: SchedulingRow[] = [];
+  while (stmt.step()) {
+    rows.push(stmt.getAsObject() as SchedulingRow);
+  }
+  stmt.free();
+  return rows;
 }
 
-export function getDueNotes(db: Database.Database, today: string, limit: number): SchedulingRow[] {
-  return db
-    .prepare('SELECT * FROM scheduling WHERE due_date <= ? ORDER BY due_date ASC LIMIT ?')
-    .all(today, limit) as SchedulingRow[];
+export function getSchedulingForNote(db: Database, noteId: string): SchedulingRow | undefined {
+  return getOneScheduling(db, 'SELECT * FROM scheduling WHERE note_id = ?', [noteId]);
 }
 
-export function deleteScheduling(db: Database.Database, noteId: string): void {
-  db.prepare('DELETE FROM scheduling WHERE note_id = ?').run(noteId);
+export function getAllScheduling(db: Database): SchedulingRow[] {
+  return getAllSchedulingRows(db, 'SELECT * FROM scheduling');
+}
+
+export function getDueNotes(db: Database, today: string, limit: number): SchedulingRow[] {
+  return getAllSchedulingRows(db, 'SELECT * FROM scheduling WHERE due_date <= ? ORDER BY due_date ASC LIMIT ?', [
+    today,
+    limit,
+  ]);
+}
+
+export function deleteScheduling(db: Database, noteId: string): void {
+  db.run('DELETE FROM scheduling WHERE note_id = ?', [noteId]);
 }

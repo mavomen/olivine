@@ -1,13 +1,13 @@
-import Database from 'better-sqlite3';
+import { createMemoryDb } from '../test-utils';
 import { bootstrapDatabase } from '../../src/database/bootstrap';
 import { insertNote, getNoteById, getNoteByPath, getAllNotes, deleteNote } from '../../src/models/note';
 import type { NoteRow } from '../../src/models/note';
 
 describe('note repository', () => {
-  let db: Database.Database;
+  let db: any;
 
-  beforeEach(() => {
-    db = new Database(':memory:');
+  beforeEach(async () => {
+    db = await createMemoryDb();
     bootstrapDatabase(db);
   });
 
@@ -52,8 +52,8 @@ describe('note repository', () => {
     });
     const all = getAllNotes(db);
     expect(all).toHaveLength(2);
-    expect(all[0]?.title).toBe('Alpha');
-    expect(all[1]?.title).toBe('Beta');
+    expect(all[0]!.title).toBe('Alpha');
+    expect(all[1]!.title).toBe('Beta');
   });
 
   it('should delete a note', () => {

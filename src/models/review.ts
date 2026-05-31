@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { Database } from 'sql.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface ReviewRow {
@@ -8,26 +8,51 @@ export interface ReviewRow {
   reviewed_at: string;
 }
 
-export function insertReview(db: Database.Database, noteId: string, quality: number, reviewedAt: string): ReviewRow {
+export function insertReview(db: Database, noteId: string, quality: number, reviewedAt: string): ReviewRow {
   const id = uuidv4();
-  db.prepare(
-    `INSERT INTO reviews (id, note_id, quality, reviewed_at) VALUES (?, ?, ?, ?)`
-  ).run(id, noteId, quality, reviewedAt);
+  db.run('INSERT INTO reviews (id, note_id, quality, reviewed_at) VALUES (?, ?, ?, ?)', [
+    id,
+    noteId,
+    quality,
+    reviewedAt,
+  ]);
   return { id, note_id: noteId, quality, reviewed_at: reviewedAt };
 }
 
-export function getReviewsForNote(db: Database.Database, noteId: string): ReviewRow[] {
-  return db.prepare('SELECT * FROM reviews WHERE note_id = ? ORDER BY reviewed_at DESC').all(noteId) as ReviewRow[];
+function queryReviews(db: Database, sql: string, params: unknown[]): ReviewRow[] {
+  const stmt = db.prepare(sql);
+  stmt.bind(params as any[]);
+  const rows: ReviewRow[] = [];
+  while (stmt.step()) {
+    rows.push(stmt.getAsObject() as ReviewRow);
+  }
+  stmt.free();
+  return rows;
 }
 
-export function getReviewCountToday(db: Database.Database, today: string): number {
-  const row = db.prepare(
-    'SELECT COUNT(*) as count FROM reviews WHERE reviewed_at = ?'
-  ).get(today) as { count: number } | undefined;
-  return row?.count ?? 0;
+export function getReviewsForNote(db: Database, noteId: string): ReviewRow[] {
+  return queryReviews(db, 'SELECT * FROM reviews WHERE note_id = ? ORDER BY reviewed_at DESC', [noteId]);
 }
 
-export function getTotalReviewCount(db: Database.Database): number {
-  const row = db.prepare('SELECT COUNT(*) as count FROM reviews').get() as { count: number } | undefined;
-  return row?.count ?? 0;
+export function getReviewCountToday(db: Database, today: string): number {
+  const stmt = db.prepare('SELECT COUNT(*) as count FROM reviews WHERE reviewed_at = ?');
+  stmt.bind([today]);
+  if (stmt.step()) {
+    const row = stmt.getAsObject() as { count: number };
+    stmt.free();
+    return row.count;
+  }
+  stmt.free();
+  return 0;
+}
+
+export function getTotalReviewCount(db: Database): number {
+  const stmt = db.prepare('SELECT COUNT(*) as count FROM reviews');
+  if (stmt.step()) {
+    const row = stmt.getAsObject() as { count: number };
+    stmt.free();
+    return row.count;
+  }
+  stmt.free();
+  return 0;
 }

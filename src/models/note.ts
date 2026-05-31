@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { Database } from 'sql.js';
 
 export interface NoteRow {
   id: string;
@@ -10,29 +10,49 @@ export interface NoteRow {
   updated_at: string;
 }
 
-export function insertNote(db: Database.Database, note: NoteRow): void {
-  db.prepare(
+export function insertNote(db: Database, note: NoteRow): void {
+  db.run(
     `INSERT OR REPLACE INTO notes (id, path, title, content, word_count, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-  ).run(note.id, note.path, note.title, note.content, note.word_count, note.created_at, note.updated_at);
+    [note.id, note.path, note.title, note.content, note.word_count, note.created_at, note.updated_at],
+  );
 }
 
-export function getNoteById(db: Database.Database, id: string): NoteRow | undefined {
-  return db.prepare('SELECT * FROM notes WHERE id = ?').get(id) as NoteRow | undefined;
+export function getNoteById(db: Database, id: string): NoteRow | undefined {
+  const stmt = db.prepare('SELECT * FROM notes WHERE id = ?');
+  stmt.bind([id]);
+  if (stmt.step()) {
+    return stmt.getAsObject() as unknown as NoteRow;
+  }
+  stmt.free();
+  return undefined;
 }
 
-export function getNoteByPath(db: Database.Database, filePath: string): NoteRow | undefined {
-  return db.prepare('SELECT * FROM notes WHERE path = ?').get(filePath) as NoteRow | undefined;
+export function getNoteByPath(db: Database, filePath: string): NoteRow | undefined {
+  const stmt = db.prepare('SELECT * FROM notes WHERE path = ?');
+  stmt.bind([filePath]);
+  if (stmt.step()) {
+    return stmt.getAsObject() as unknown as NoteRow;
+  }
+  stmt.free();
+  return undefined;
 }
 
-export function getAllNotes(db: Database.Database): NoteRow[] {
-  return db.prepare('SELECT * FROM notes ORDER BY path').all() as NoteRow[];
+export function getAllNotes(db: Database): NoteRow[] {
+  const results = db.exec('SELECT * FROM notes ORDER BY path');
+  if (results.length === 0) return [];
+  const columns = results[0]!.columns;
+  return results[0]!.values.map((row: unknown[]) => {
+    const obj: Record<string, unknown> = {};
+    columns.forEach((col: string, i: number) => (obj[col] = row[i]));
+    return obj as unknown as NoteRow;
+  });
 }
 
-export function deleteNote(db: Database.Database, id: string): void {
-  db.prepare('DELETE FROM notes WHERE id = ?').run(id);
+export function deleteNote(db: Database, id: string): void {
+  db.run('DELETE FROM notes WHERE id = ?', [id]);
 }
 
-export function deleteNoteByPath(db: Database.Database, filePath: string): void {
-  db.prepare('DELETE FROM notes WHERE path = ?').run(filePath);
+export function deleteNoteByPath(db: Database, filePath: string): void {
+  db.run('DELETE FROM notes WHERE path = ?', [filePath]);
 }

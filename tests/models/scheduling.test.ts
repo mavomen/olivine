@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { createMemoryDb } from '../test-utils';
 import { bootstrapDatabase } from '../../src/database/bootstrap';
 import { insertNote } from '../../src/models/note';
 import {
@@ -12,40 +12,35 @@ import type { NoteRow } from '../../src/models/note';
 import type { SchedulingRow } from '../../src/models/scheduling';
 
 describe('scheduling repository', () => {
-  let db: Database.Database;
+  let db: any;
 
-  beforeEach(() => {
-    db = new Database(':memory:');
+  beforeEach(async () => {
+    db = await createMemoryDb();
     bootstrapDatabase(db);
+    const note1: NoteRow = {
+      id: 'abc123',
+      path: '/vault/notes/alpha.md',
+      title: 'Alpha',
+      content: 'Some content',
+      word_count: 2,
+      created_at: '2025-01-01',
+      updated_at: '2025-01-02',
+    };
+    const note2: NoteRow = {
+      id: 'def456',
+      path: '/vault/notes/beta.md',
+      title: 'Beta',
+      content: 'More content',
+      word_count: 2,
+      created_at: '2025-01-01',
+      updated_at: '2025-01-02',
+    };
+    insertNote(db, note1);
+    insertNote(db, note2);
   });
 
   afterEach(() => {
     db.close();
-  });
-
-  const sampleNote: NoteRow = {
-    id: 'abc123',
-    path: '/vault/notes/alpha.md',
-    title: 'Alpha',
-    content: 'Some content',
-    word_count: 2,
-    created_at: '2025-01-01',
-    updated_at: '2025-01-02',
-  };
-
-  const sampleNote2: NoteRow = {
-    id: 'def456',
-    path: '/vault/notes/beta.md',
-    title: 'Beta',
-    content: 'More content',
-    word_count: 2,
-    created_at: '2025-01-01',
-    updated_at: '2025-01-02',
-  };
-
-  beforeEach(() => {
-    insertNote(db, sampleNote);
-    insertNote(db, sampleNote2);
   });
 
   const scheduling: SchedulingRow = {
@@ -67,7 +62,7 @@ describe('scheduling repository', () => {
     insertScheduling(db, scheduling);
     insertScheduling(db, { ...scheduling, repetitions: 2 });
     const row = getSchedulingForNote(db, 'abc123');
-    expect(row?.repetitions).toBe(2);
+    expect(row!.repetitions).toBe(2);
   });
 
   it('should return all scheduling rows', () => {
@@ -79,28 +74,19 @@ describe('scheduling repository', () => {
 
   it('should find due notes', () => {
     insertScheduling(db, scheduling);
-    insertScheduling(db, {
-      ...scheduling,
-      note_id: 'def456',
-      due_date: '2025-06-03',
-    });
+    insertScheduling(db, { ...scheduling, note_id: 'def456', due_date: '2025-06-03' });
     const due = getDueNotes(db, '2025-06-01', 10);
     expect(due).toHaveLength(1);
-    expect(due[0]?.note_id).toBe('abc123');
+    expect(due[0]!.note_id).toBe('abc123');
   });
 
-  it('should respect due date limit', () => {
+  it('should respect due date ordering', () => {
     insertScheduling(db, scheduling);
-    insertScheduling(db, {
-      ...scheduling,
-      note_id: 'def456',
-      due_date: '2025-05-30',
-    });
+    insertScheduling(db, { ...scheduling, note_id: 'def456', due_date: '2025-05-30' });
     const due = getDueNotes(db, '2025-06-01', 10);
     expect(due).toHaveLength(2);
-    // ordered by due_date ASC
-    expect(due[0]?.note_id).toBe('def456');
-    expect(due[1]?.note_id).toBe('abc123');
+    expect(due[0]!.note_id).toBe('def456');
+    expect(due[1]!.note_id).toBe('abc123');
   });
 
   it('should delete scheduling', () => {
