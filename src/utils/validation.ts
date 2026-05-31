@@ -1,4 +1,3 @@
-import { promises as fs } from 'node:fs';
 import { directoryExists } from './fs';
 
 export async function validateVaultPath(vaultPath: string): Promise<void> {

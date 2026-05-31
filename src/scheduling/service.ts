@@ -3,7 +3,6 @@ import { sm2, SM2_DEFAULTS } from '../algorithms/sm2';
 import {
   insertScheduling,
   getSchedulingForNote,
-  deleteScheduling,
 } from '../models/scheduling';
 import type { SchedulingRow } from '../models/scheduling';
 import { todayISO, addDays } from '../utils/date';

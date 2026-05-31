@@ -19,7 +19,7 @@ export function insertScheduling(db: Database, row: SchedulingRow): void {
 
 function getOneScheduling(db: Database, sql: string, params: unknown[]): SchedulingRow | undefined {
   const stmt = db.prepare(sql);
-  stmt.bind(params as any[]);
+  stmt.bind(params);
   if (stmt.step()) {
     const row = stmt.getAsObject() as SchedulingRow;
     stmt.free();
@@ -31,7 +31,7 @@ function getOneScheduling(db: Database, sql: string, params: unknown[]): Schedul
 
 function getAllSchedulingRows(db: Database, sql: string, params: unknown[] = []): SchedulingRow[] {
   const stmt = db.prepare(sql);
-  stmt.bind(params as any[]);
+  stmt.bind(params);
   const rows: SchedulingRow[] = [];
   while (stmt.step()) {
     rows.push(stmt.getAsObject() as SchedulingRow);

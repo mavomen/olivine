@@ -1,7 +1,6 @@
 import { Database } from 'sql.js';
 import { getDueNotes } from '../models/scheduling';
 import { getNoteById } from '../models/note';
-import { initializeScheduling } from '../scheduling/service';
 import { createSession, type ReviewSession } from './state';
 import { logger } from '../utils/logger';
 import { todayISO } from '../utils/date';

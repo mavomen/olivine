@@ -2,7 +2,6 @@ import { Database } from 'sql.js';
 import { getAllNotes } from '../models/note';
 import { getAllScheduling, getDueNotes } from '../models/scheduling';
 import { getReviewCountToday, getTotalReviewCount } from '../models/review';
-import { todayISO } from '../utils/date';
 
 export function totalNotes(db: Database): number {
   return getAllNotes(db).length;

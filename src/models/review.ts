@@ -21,7 +21,7 @@ export function insertReview(db: Database, noteId: string, quality: number, revi
 
 function queryReviews(db: Database, sql: string, params: unknown[]): ReviewRow[] {
   const stmt = db.prepare(sql);
-  stmt.bind(params as any[]);
+  stmt.bind(params);
   const rows: ReviewRow[] = [];
   while (stmt.step()) {
     rows.push(stmt.getAsObject() as ReviewRow);
