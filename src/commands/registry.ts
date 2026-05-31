@@ -1,5 +1,6 @@
 import { Command } from 'commander';
+import { buildInitCommand } from './init';
 
 export function registerCommands(program: Command): void {
-  // Commands will be registered here as they are built
+  program.addCommand(buildInitCommand());
 }
