@@ -17,55 +17,59 @@ describe('scheduling lifecycle integration', () => {
     db.close();
   });
 
-  function addNote(id: string, path: string) {
+  function addNote(id: string, dueDate: string) {
     const note: NoteRow = {
       id,
-      path,
+      path: `${id}.md`,
       title: id,
       content: `Content of ${id}`,
       word_count: 2,
-      created_at: '2025-06-01',
-      updated_at: '2025-06-01',
+      created_at: '2025-01-01',
+      updated_at: '2025-01-01',
     };
     insertNote(db, note);
     initializeScheduling(db, id);
+    // Override due_date for controlled testing
+    db.run('UPDATE scheduling SET due_date = ? WHERE note_id = ?', [dueDate, id]);
   }
 
-  it('should progress notes from new to due', () => {
-    addNote('a', 'a.md');
-    addNote('b', 'b.md');
+  it('should progress notes from new to due, unreviewed stay due', () => {
+    addNote('a', '2025-06-01');
+    addNote('b', '2025-06-01');
 
-    // Both new — due immediately (today)
+    // Both due on 06-01
     let due = getDueNotes(db, '2025-06-01', 10);
     expect(due).toHaveLength(2);
 
-    // Review 'a' successfully
+    // Review 'a' — rescheduled to 06-02
     applyReview(db, 'a', 4, '2025-06-01');
+
+    // On 06-01, only 'b' still due
     due = getDueNotes(db, '2025-06-01', 10);
-    expect(due).toHaveLength(1); // only 'b' still due today
+    expect(due).toHaveLength(1);
     expect(due[0]!.note_id).toBe('b');
 
-    // 'a' should be due tomorrow
+    // On 06-02, both 'a' and 'b' are due ('b' unreviewed stays due)
     due = getDueNotes(db, '2025-06-02', 10);
-    expect(due).toHaveLength(1);
-    expect(due[0]!.note_id).toBe('a');
+    expect(due).toHaveLength(2);
+    const ids = due.map((d) => d.note_id).sort();
+    expect(ids).toEqual(['a', 'b']);
   });
 
   it('should keep failed notes due within one day', () => {
-    addNote('fail', 'fail.md');
-    applyReview(db, 'fail', 1, '2025-06-01'); // failed
+    addNote('fail', '2025-06-01');
+    applyReview(db, 'fail', 1, '2025-06-01');
 
     let due = getDueNotes(db, '2025-06-02', 10);
     expect(due).toHaveLength(1);
 
-    // Still due after failing again
     applyReview(db, 'fail', 0, '2025-06-02');
     due = getDueNotes(db, '2025-06-03', 10);
     expect(due).toHaveLength(1);
   });
 
   it('should schedule successful notes further into the future', () => {
-    addNote('master', 'master.md');
+    addNote('master', '2025-06-01');
     applyReview(db, 'master', 4, '2025-06-01'); // int=1, due 06-02
     applyReview(db, 'master', 4, '2025-06-02'); // int=6, due 06-08
 
