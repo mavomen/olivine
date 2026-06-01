@@ -1,13 +1,15 @@
 import { Database } from 'sql.js';
-import { getDueNotes } from '../models/scheduling';
+import { getDueNotes, getDueNotesByTag } from '../models/scheduling';
 import { getNoteById } from '../models/note';
 import { createSession, type ReviewSession } from './state';
 import { logger } from '../utils/logger';
 import { todayISO } from '../utils/date';
 
-export function loadDueSession(db: Database): ReviewSession | null {
+export function loadDueSession(db: Database, tag?: string): ReviewSession | null {
   const today = todayISO();
-  const due = getDueNotes(db, today, Number.MAX_SAFE_INTEGER);
+  const due = tag
+    ? getDueNotesByTag(db, today, tag, Number.MAX_SAFE_INTEGER)
+    : getDueNotes(db, today, Number.MAX_SAFE_INTEGER);
 
   if (due.length === 0) {
     return null;

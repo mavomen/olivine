@@ -12,14 +12,14 @@ export interface StatsSnapshot {
   streak: number;
 }
 
-export function getStats(db: Database): StatsSnapshot {
+export function getStats(db: Database, tag?: string): StatsSnapshot {
   const today = todayISO();
   return {
-    totalNotes: totalNotes(db),
-    dueNotes: dueNotesCount(db, today),
+    totalNotes: totalNotes(db, tag),
+    dueNotes: dueNotesCount(db, today, tag),
     reviewedToday: reviewedToday(db, today),
-    boxDistribution: boxDistribution(db),
-    archivedCount: archivedCount(db),
+    boxDistribution: boxDistribution(db, tag),
+    archivedCount: archivedCount(db, tag),
     totalReviews: totalReviews(db),
     streak: streak(db, today),
   };

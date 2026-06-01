@@ -23,6 +23,7 @@ async function createCardFile(
   cardsDir: string,
   question: string,
   answer: string,
+  tags: string[],
 ): Promise<{ relativePath: string; filePath: string }> {
   const fileDir = cardsDir ? path.join(vaultPath, cardsDir) : vaultPath;
   await fs.mkdir(fileDir, { recursive: true });
@@ -31,14 +32,16 @@ async function createCardFile(
   const filePath = path.join(fileDir, fileName);
 
   const today = todayISO();
+  const tagsLine = tags.length > 0 ? `tags: [${tags.join(', ')}]\n` : '';
   const frontmatter = [
     '---',
     `title: ${question}`,
     `created: ${today}`,
+    tagsLine,
     '---',
     '',
     answer,
-  ].join('\n');
+  ].filter(Boolean).join('\n');
 
   await fs.writeFile(filePath, frontmatter, 'utf-8');
 
@@ -52,7 +55,8 @@ export function buildAddCommand(): Command {
     .argument('<vaultPath>', 'Path to the Obsidian vault')
     .option('--title <title>', 'Card question (non-interactive mode)')
     .option('--content <content>', 'Card answer (non-interactive mode)')
-    .action(async (vaultPath: string, options: { title?: string; content?: string }) => {
+    .option('--tags <tags>', 'Comma-separated tags (non-interactive mode)')
+    .action(async (vaultPath: string, options: { title?: string; content?: string; tags?: string }) => {
       try {
         await validateVaultPath(vaultPath);
         const config = await loadConfig(vaultPath);
@@ -61,13 +65,15 @@ export function buildAddCommand(): Command {
 
         let question: string;
         let answer: string;
+        let tags: string[];
 
         if (options.title && options.content) {
           question = options.title;
           answer = options.content;
+          tags = options.tags ? options.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
         } else if (process.stdout.isTTY) {
           const { showAddCardForm } = await import('../session/tui-add');
-          const result = await new Promise<{ title: string; content: string } | null>(
+          const result = await new Promise<{ title: string; content: string; tags: string } | null>(
             (resolve) => {
               showAddCardForm(
                 config.cardsDir || 'vault root',
@@ -76,23 +82,15 @@ export function buildAddCommand(): Command {
               );
             },
           );
-          if (!result) {
-            closeDb();
-            return;
-          }
+          if (!result) { closeDb(); return; }
           question = result.title;
           answer = result.content;
+          tags = result.tags ? result.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
         } else {
           throw new Error('Non-interactive mode requires --title and --content');
         }
 
-        const { relativePath, filePath } = await createCardFile(
-          vaultPath,
-          config.cardsDir,
-          question,
-          answer,
-        );
-
+        const { relativePath, filePath } = await createCardFile(vaultPath, config.cardsDir, question, answer, tags);
         const today = todayISO();
         const note = {
           id: relativePath,
@@ -102,14 +100,13 @@ export function buildAddCommand(): Command {
           word_count: answer.split(/\s+/).filter(Boolean).length,
           created_at: today,
           updated_at: today,
-          tags: '[]',
+          tags: JSON.stringify(tags),
         };
 
         insertNote(db, note);
         initializeScheduling(db, note.id);
         saveDb(vaultPath);
         closeDb();
-
         console.log(`Card created: ${filePath}`);
       } catch (err) {
         handleError('Failed to create card', err);

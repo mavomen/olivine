@@ -22,57 +22,54 @@ export function buildEditCommand(): Command {
 
         const notes = getAllNotes(db);
         if (notes.length === 0) {
-          console.log('No cards found. Use `olivine add` to create some.');
+          console.log('No cards found.');
           closeDb();
           return;
         }
 
         const { default: inquirer } = await import('inquirer');
-        const { noteId } = await inquirer.prompt([
-          {
-            type: 'list',
-            name: 'noteId',
-            message: 'Select a card to edit:',
-            choices: notes.map((n) => ({ name: n.title, value: n.id })),
-            pageSize: 15,
-          },
-        ]);
+        const { noteId } = await inquirer.prompt([{
+          type: 'list', name: 'noteId', message: 'Select a card to edit:',
+          choices: notes.map(n => ({ name: n.title, value: n.id })),
+          pageSize: 15,
+        }]);
 
-        const note = notes.find((n) => n.id === noteId);
-        if (!note) {
-          closeDb();
-          return;
-        }
+        const note = notes.find(n => n.id === noteId);
+        if (!note) { closeDb(); return; }
+
+        const existingTags = (() => {
+          try { return JSON.parse(note.tags || '[]').join(', '); }
+          catch { return ''; }
+        })();
 
         const { showAddCardForm } = await import('../session/tui-add');
-        const result = await new Promise<{ title: string; content: string } | null>(
-          (resolve) => {
-            showAddCardForm(
-              config.cardsDir || 'vault root',
-              (card) => resolve(card),
-              () => resolve(null),
-              note.title,
-              note.content,
-            );
-          },
-        );
+        const result = await new Promise<{ title: string; content: string; tags: string } | null>(resolve => {
+          showAddCardForm(
+            config.cardsDir || 'vault root',
+            card => resolve(card),
+            () => resolve(null),
+            note.title,
+            note.content,
+            existingTags,
+          );
+        });
 
-        if (!result) {
-          closeDb();
-          return;
-        }
+        if (!result) { closeDb(); return; }
 
         const filePath = path.join(vaultPath, note.path);
         const today = todayISO();
+        const tagsArr = result.tags ? result.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+        const tagsLine = tagsArr.length > 0 ? `tags: [${tagsArr.join(', ')}]\n` : '';
         const frontmatter = [
           '---',
           `title: ${result.title}`,
           `created: ${note.created_at}`,
           `updated: ${today}`,
+          tagsLine,
           '---',
           '',
           result.content,
-        ].join('\n');
+        ].filter(Boolean).join('\n');
 
         await fs.writeFile(filePath, frontmatter, 'utf-8');
 
@@ -84,14 +81,12 @@ export function buildEditCommand(): Command {
           word_count: result.content.split(/\s+/).filter(Boolean).length,
           created_at: note.created_at,
           updated_at: today,
-          tags: note.tags || '[]',
+          tags: JSON.stringify(tagsArr),
         });
 
         saveDb(vaultPath);
         closeDb();
         console.log(`Card updated: ${filePath}`);
-      } catch (err) {
-        handleError('Edit failed', err);
-      }
+      } catch (err) { handleError('Edit failed', err); }
     });
 }

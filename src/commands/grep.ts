@@ -42,8 +42,6 @@ export function buildGrepCommand(): Command {
           const archived = sched?.archived;
           const status = archived ? chalk.gray(' (archived)') : box ? chalk.dim(` [Box ${box}]`) : '';
           
-          // Highlight matching text
-          const titleDisplay = highlight(note.title, pattern);
           const contentDisplay = truncate(highlight(note.content, pattern), 120);
           
           console.log(chalk.yellow(note.title) + status);
