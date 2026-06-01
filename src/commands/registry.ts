@@ -5,6 +5,9 @@ import { buildReviewCommand } from './review';
 import { buildStatsCommand } from './stats';
 import { buildDueCommand } from './due';
 import { buildAddCommand } from './add';
+import { buildConfigCommand } from './config';
+import { buildEditCommand } from './edit';
+import { buildBrowseCommand } from './browse';
 
 export function registerCommands(program: Command): void {
   program.addCommand(buildInitCommand());
@@ -13,4 +16,7 @@ export function registerCommands(program: Command): void {
   program.addCommand(buildStatsCommand());
   program.addCommand(buildDueCommand());
   program.addCommand(buildAddCommand());
+  program.addCommand(buildConfigCommand());
+  program.addCommand(buildEditCommand());
+  program.addCommand(buildBrowseCommand());
 }

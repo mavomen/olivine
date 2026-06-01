@@ -2,9 +2,6 @@ import { Command } from 'commander';
 import { getDb, saveDb, closeDb } from '../database/connection';
 import { bootstrapDatabase } from '../database/bootstrap';
 import { loadDueSession } from '../session/loader';
-import { runReviewSession } from '../session/runner';
-import { runTuiSession } from '../session/tui-runner';
-import { loadConfig } from '../config/loader';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 import { getStats, formatStats } from '../stats/formatter';
@@ -17,11 +14,10 @@ export function buildReviewCommand(): Command {
     .action(async (vaultPath: string, options: { tui?: boolean }) => {
       try {
         await validateVaultPath(vaultPath);
-        const config = await loadConfig(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
 
-        const session = loadDueSession(db, config.dailyReviewLimit);
+        const session = loadDueSession(db);
         if (!session) {
           const stats = getStats(db);
           console.log('All caught up! No notes due for review.');
@@ -31,8 +27,10 @@ export function buildReviewCommand(): Command {
         }
 
         if (options.tui) {
+          const { runTuiSession } = await import('../session/tui-runner');
           await runTuiSession(db, session);
         } else {
+          const { runReviewSession } = await import('../session/runner');
           await runReviewSession(db, session);
         }
 

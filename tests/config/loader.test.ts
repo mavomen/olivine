@@ -19,14 +19,13 @@ describe('config loader', () => {
     it('should return default values', () => {
       const config = defaultConfig();
       expect(config.vaultPath).toBe('');
-      expect(config.dailyReviewLimit).toBe(20);
       expect(config.cardsDir).toBe('');
     });
   });
 
   describe('saveConfig', () => {
     it('should create .olivine directory and config.json', async () => {
-      const config: OlivineConfig = { vaultPath: tmpDir, dailyReviewLimit: 10, cardsDir: '' };
+      const config: OlivineConfig = { vaultPath: tmpDir, cardsDir: '' };
       await saveConfig(tmpDir, config);
       const configPath = path.join(tmpDir, OLIVINE_DIR, CONFIG_FILENAME);
       const exists = await fs.stat(configPath).then(() => true, () => false);
@@ -38,12 +37,11 @@ describe('config loader', () => {
     it('should return defaults when no config file exists', async () => {
       const config = await loadConfig(tmpDir);
       expect(config.vaultPath).toBe(tmpDir);
-      expect(config.dailyReviewLimit).toBe(20);
       expect(config.cardsDir).toBe('');
     });
 
     it('should load saved config', async () => {
-      const saved: OlivineConfig = { vaultPath: tmpDir, dailyReviewLimit: 5, cardsDir: 'my-cards' };
+      const saved: OlivineConfig = { vaultPath: tmpDir, cardsDir: 'my-cards' };
       await saveConfig(tmpDir, saved);
       const config = await loadConfig(tmpDir);
       expect(config).toEqual(saved);
@@ -53,12 +51,11 @@ describe('config loader', () => {
       await fs.mkdir(path.join(tmpDir, OLIVINE_DIR), { recursive: true });
       await fs.writeFile(
         path.join(tmpDir, OLIVINE_DIR, CONFIG_FILENAME),
-        JSON.stringify({ dailyReviewLimit: 30 }),
+        JSON.stringify({ vaultPath: tmpDir }),
         'utf-8',
       );
       const config = await loadConfig(tmpDir);
       expect(config.vaultPath).toBe(tmpDir);
-      expect(config.dailyReviewLimit).toBe(30);
       expect(config.cardsDir).toBe('');
     });
   });
