@@ -21,14 +21,16 @@ describe('review command', () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('should report no due notes when vault is empty', () => {
+  it('should report no due notes and show stats when vault is empty', () => {
     const output = execSync(`${CLI} review "${tmpDir}"`, { encoding: 'utf-8', stdio: 'pipe' });
-    expect(output).toMatch(/No notes due/);
+    expect(output).toMatch(/All caught up/);
+    expect(output).toMatch(/Total notes/);
   });
 
   it('should report no due notes with --tui when vault is empty', () => {
     const output = execSync(`${CLI} review "${tmpDir}" --tui`, { encoding: 'utf-8', stdio: 'pipe' });
-    expect(output).toMatch(/No notes due/);
+    expect(output).toMatch(/All caught up/);
+    expect(output).toMatch(/Total notes/);
   });
 
   it('should attempt review for due notes', async () => {
@@ -58,7 +60,6 @@ describe('review command', () => {
       timeout: 5000,
     });
 
-    // Fallback should complete silently (auto-pass with quality=4)
     expect(output).toBeDefined();
   });
 });

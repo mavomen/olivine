@@ -6,8 +6,8 @@ import { runReviewSession } from '../session/runner';
 import { runTuiSession } from '../session/tui-runner';
 import { loadConfig } from '../config/loader';
 import { handleError } from '../utils/error';
-import { logger } from '../utils/logger';
 import { validateVaultPath } from '../utils/validation';
+import { getStats, formatStats } from '../stats/formatter';
 
 export function buildReviewCommand(): Command {
   return new Command('review')
@@ -23,7 +23,9 @@ export function buildReviewCommand(): Command {
 
         const session = loadDueSession(db, config.dailyReviewLimit);
         if (!session) {
-          logger.info('No notes due for review!');
+          const stats = getStats(db);
+          console.log('All caught up! No notes due for review.');
+          console.log(formatStats(stats));
           closeDb();
           return;
         }

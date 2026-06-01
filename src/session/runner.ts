@@ -17,26 +17,27 @@ export async function runReviewSession(
     const sn = currentNote(session);
     if (!sn) break;
 
-    // Progress indicator
     const progress = `[${session.currentIndex + 1}/${session.notes.length}]`;
     console.log(chalk.cyan(`${progress} ${chalk.white(sn.note.title)}`));
 
-    // Reveal answer
     await promptReveal(sn.note.title);
     console.log(chalk.gray('\n--- Content ---'));
     console.log(sn.note.content);
     console.log(chalk.gray('----------------\n'));
 
-    // Quality score
     const quality = await promptQuality();
     applyQuality(session, quality);
 
-    // Persist review and update scheduling
     insertReview(db, sn.note.id, quality, today);
     applyReview(db, sn.note.id, quality, today);
 
     advanceNote(session);
     console.log(); // spacing
+
+    // If we've reviewed all notes, transition to summary
+    if (session.currentIndex >= session.notes.length) {
+      session.phase = 'summary';
+    }
   }
 
   // Session summary
