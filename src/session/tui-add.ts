@@ -1,4 +1,4 @@
-import blessed, { Widgets } from 'blessed';
+import blessed from 'blessed';
 
 export interface AddCardResult {
   title: string;
@@ -11,11 +11,13 @@ export function showAddCardForm(
   cardsDir: string,
   onSave: (result: AddCardResult) => void,
   onCancel: () => void,
+  initialTitle: string = '',
+  initialContent: string = '',
 ): Promise<void> {
   return new Promise((resolve) => {
     const screen = blessed.screen({
       smartCSR: true,
-      title: 'Olivine — New Card',
+      title: 'Olivine — ' + (initialTitle ? 'Edit Card' : 'New Card'),
       dockBorders: false,
     });
 
@@ -24,9 +26,9 @@ export function showAddCardForm(
       top: 'center',
       left: 'center',
       width: 80,
-      height: 22,
+      height: 24,
       border: 'line',
-      label: ' New Card ',
+      label: initialTitle ? ' Edit Card ' : ' New Card ',
       style: { border: { fg: 'cyan' } },
       keys: true,
       mouse: false,
@@ -48,9 +50,12 @@ export function showAddCardForm(
       height: 3,
       border: 'line',
       style: { border: { fg: 'yellow' }, bg: 'black', fg: 'white' },
-      scrollable: false,
+      scrollable: true,
+      alwaysScroll: true,
       tags: false,
-      content: ' ',
+      content: initialTitle || ' ',
+      keys: true,
+      vi: true,
     });
 
     blessed.line({
@@ -75,12 +80,15 @@ export function showAddCardForm(
       top: 9,
       left: 3,
       right: 3,
-      height: 6,
+      height: 10,
       border: 'line',
       style: { border: { fg: 'grey' }, bg: 'black', fg: 'white' },
-      scrollable: false,
+      scrollable: true,
+      alwaysScroll: true,
       tags: false,
-      content: ' ',
+      content: initialContent || ' ',
+      keys: true,
+      vi: true,
     });
 
     const footer = blessed.box({
@@ -96,17 +104,30 @@ export function showAddCardForm(
 
     let mode: Mode = 'INSERT';
     let focused: 'question' | 'answer' = 'question';
-    let questionBuf = '';
-    let answerBuf = '';
-    let qCursor = 0;
-    let aCursor = 0;
+    let questionBuf = initialTitle;
+    let answerBuf = initialContent;
+    let qCursor = initialTitle.length;
+    let aCursor = initialContent.length;
 
-    function renderField(box: Widgets.BoxElement, text: string, cursor: number) {
+    function renderWithCursor(text: string, cursor: number): string {
       const before = text.slice(0, cursor);
-      const at = text[cursor] || ' ';
-      const after = text.slice(cursor + 1);
-      const display = before + '\x1b[7m' + at + '\x1b[27m' + after;
-      box.setContent(display || ' ');
+      const after = text.slice(cursor);
+      // reverse-video space as cursor
+      return before + '\x1b[7m \x1b[27m' + after || ' ';
+    }
+
+    function renderQuestion() {
+      const content = focused === 'question'
+        ? renderWithCursor(questionBuf, qCursor)
+        : questionBuf || ' ';
+      questionBox.setContent(content);
+    }
+
+    function renderAnswer() {
+      const content = focused === 'answer'
+        ? renderWithCursor(answerBuf, aCursor)
+        : answerBuf || ' ';
+      answerBox.setContent(content);
     }
 
     function updateFooter() {
@@ -132,8 +153,8 @@ export function showAddCardForm(
     }
 
     function renderAll() {
-      renderField(questionBox, questionBuf, qCursor);
-      renderField(answerBox, answerBuf, aCursor);
+      renderQuestion();
+      renderAnswer();
       updateFooter();
       screen.render();
     }
@@ -158,6 +179,14 @@ export function showAddCardForm(
       }
     }
 
+    function forwardDelete() {
+      if (focused === 'question' && qCursor < questionBuf.length) {
+        questionBuf = questionBuf.slice(0, qCursor) + questionBuf.slice(qCursor + 1);
+      } else if (focused === 'answer' && aCursor < answerBuf.length) {
+        answerBuf = answerBuf.slice(0, aCursor) + answerBuf.slice(aCursor + 1);
+      }
+    }
+
     function moveCursor(dir: number) {
       if (focused === 'question') {
         qCursor = Math.max(0, Math.min(qCursor + dir, questionBuf.length));
@@ -166,36 +195,7 @@ export function showAddCardForm(
       }
     }
 
-    function nextWord() {
-      const buf = focused === 'question' ? questionBuf : answerBuf;
-      const cur = focused === 'question' ? qCursor : aCursor;
-      const rest = buf.slice(cur);
-      const match = rest.match(/\s*\S+/);
-      if (match) {
-        const newCur = cur + match[0]!.length;
-        if (focused === 'question') qCursor = newCur;
-        else aCursor = newCur;
-      }
-    }
-
-    function prevWord() {
-      const buf = focused === 'question' ? questionBuf : answerBuf;
-      const cur = focused === 'question' ? qCursor : aCursor;
-      const before = buf.slice(0, cur);
-      const words = before.match(/\S+\s*$/);
-      if (words) {
-        const newCur = cur - words[0]!.length;
-        if (focused === 'question') qCursor = newCur;
-        else aCursor = newCur;
-      } else {
-        if (focused === 'question') qCursor = 0;
-        else aCursor = 0;
-      }
-    }
-
-    // Single unified key handler
     screen.on('keypress', (ch: string, key: { name?: string; full?: string }) => {
-      // Ctrl+S always saves
       if (key.full === 'C-s') {
         if (!questionBuf.trim()) {
           footer.setContent(' Question cannot be empty!');
@@ -205,11 +205,15 @@ export function showAddCardForm(
           return;
         }
         onSave({ title: questionBuf.trim(), content: answerBuf.trim() });
-        resetFields();
+        if (initialTitle) {
+          screen.destroy();
+          resolve();
+        } else {
+          resetFields();
+        }
         return;
       }
 
-      // Ctrl+Q always cancels
       if (key.full === 'C-q') {
         screen.destroy();
         onCancel();
@@ -217,7 +221,6 @@ export function showAddCardForm(
         return;
       }
 
-      // Tab always switches field
       if (key.name === 'tab') {
         if (focused === 'question') {
           focused = 'answer';
@@ -232,14 +235,12 @@ export function showAddCardForm(
         return;
       }
 
-      // Esc toggles mode
       if (key.name === 'escape') {
         if (mode === 'INSERT') {
           mode = 'NORMAL';
           updateFooter();
           screen.render();
         } else {
-          // In NORMAL, escape cancels
           screen.destroy();
           onCancel();
           resolve();
@@ -248,48 +249,37 @@ export function showAddCardForm(
       }
 
       if (mode === 'INSERT') {
-        // Insert mode typing
         if (key.name === 'left') { moveCursor(-1); renderAll(); return; }
         if (key.name === 'right') { moveCursor(1); renderAll(); return; }
-        if (key.name === 'home') { if (focused === 'question') qCursor=0; else aCursor=0; renderAll(); return; }
-        if (key.name === 'end') { if (focused === 'question') qCursor=questionBuf.length; else aCursor=answerBuf.length; renderAll(); return; }
-        if (key.name === 'backspace') { deleteChar(); renderAll(); return; }
-        if (key.name === 'delete') {
-          if (focused === 'question' && qCursor < questionBuf.length)
-            questionBuf = questionBuf.slice(0, qCursor) + questionBuf.slice(qCursor+1);
-          else if (focused === 'answer' && aCursor < answerBuf.length)
-            answerBuf = answerBuf.slice(0, aCursor) + answerBuf.slice(aCursor+1);
+        if (key.name === 'home') {
+          if (focused === 'question') qCursor = 0;
+          else aCursor = 0;
           renderAll(); return;
         }
+        if (key.name === 'end') {
+          if (focused === 'question') qCursor = questionBuf.length;
+          else aCursor = answerBuf.length;
+          renderAll(); return;
+        }
+        if (key.name === 'backspace') { deleteChar(); renderAll(); return; }
+        if (key.name === 'delete') { forwardDelete(); renderAll(); return; }
         if (key.name === 'return') { insertChar('\n'); renderAll(); return; }
         if (ch && ch.length === 1) {
           insertChar(ch);
           renderAll();
         }
       } else {
-        // Normal mode
         switch (ch) {
           case 'q': screen.destroy(); onCancel(); resolve(); break;
           case 'i': mode = 'INSERT'; updateFooter(); screen.render(); break;
           case 'a': moveCursor(1); mode = 'INSERT'; updateFooter(); screen.render(); break;
-          case 'I': if (focused === 'question') qCursor=0; else aCursor=0; mode = 'INSERT'; updateFooter(); screen.render(); break;
-          case 'A': if (focused === 'question') qCursor=questionBuf.length; else aCursor=answerBuf.length; mode = 'INSERT'; updateFooter(); screen.render(); break;
+          case 'I': if (focused === 'question') qCursor = 0; else aCursor = 0; mode = 'INSERT'; updateFooter(); screen.render(); break;
+          case 'A': if (focused === 'question') qCursor = questionBuf.length; else aCursor = answerBuf.length; mode = 'INSERT'; updateFooter(); screen.render(); break;
           case 'h': moveCursor(-1); renderAll(); break;
           case 'l': moveCursor(1); renderAll(); break;
-          case '0': if (focused === 'question') qCursor=0; else aCursor=0; renderAll(); break;
-          case '$': if (focused === 'question') qCursor=questionBuf.length; else aCursor=answerBuf.length; renderAll(); break;
-          case 'w': nextWord(); renderAll(); break;
-          case 'b': prevWord(); renderAll(); break;
+          case '0': if (focused === 'question') qCursor = 0; else aCursor = 0; renderAll(); break;
+          case '$': if (focused === 'question') qCursor = questionBuf.length; else aCursor = answerBuf.length; renderAll(); break;
           case 'x': deleteChar(); renderAll(); break;
-          case 'o':
-            if (focused === 'answer') {
-              answerBuf = answerBuf.slice(0, aCursor) + '\n' + answerBuf.slice(aCursor);
-              aCursor++;
-              mode = 'INSERT';
-              updateFooter();
-              renderAll();
-            }
-            break;
         }
       }
     });

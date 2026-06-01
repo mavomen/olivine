@@ -47,7 +47,7 @@ export function getSchedulingForNote(db: Database, noteId: string): SchedulingRo
 }
 
 export function getAllScheduling(db: Database): SchedulingRow[] {
-  return getAllSchedulingRows(db, 'SELECT * FROM scheduling WHERE archived = 0');
+  return getAllSchedulingRows(db, 'SELECT * FROM scheduling');
 }
 
 export function getDueNotes(db: Database, today: string, limit: number): SchedulingRow[] {

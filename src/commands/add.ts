@@ -6,7 +6,6 @@ import { bootstrapDatabase } from '../database/bootstrap';
 import { loadConfig } from '../config/loader';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
-import { showAddCardForm } from '../session/tui-add';
 import { insertNote } from '../models/note';
 import { initializeScheduling } from '../scheduling/service';
 import { todayISO } from '../utils/date';
@@ -67,6 +66,7 @@ export function buildAddCommand(): Command {
           question = options.title;
           answer = options.content;
         } else if (process.stdout.isTTY) {
+          const { showAddCardForm } = await import('../session/tui-add');
           const result = await new Promise<{ title: string; content: string } | null>(
             (resolve) => {
               showAddCardForm(

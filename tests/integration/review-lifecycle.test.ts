@@ -40,7 +40,7 @@ describe('review lifecycle integration', () => {
     addNote('a', '2025-06-01');
     addNote('b', '2025-06-01');
 
-    const session = loadDueSession(db, 10);
+    const session = loadDueSession(db);
     expect(session!.notes).toHaveLength(2);
 
     const sn = session!.notes[0]!;
@@ -58,7 +58,7 @@ describe('review lifecycle integration', () => {
   it('should reset failed reviews to Box 1', () => {
     addNote('fail', '2025-06-01');
 
-    const session = loadDueSession(db, 10);
+    const session = loadDueSession(db);
     const sn = session!.notes[0]!;
     applyQuality(session!, 0);
     advanceNote(session!);

@@ -67,26 +67,20 @@ describe('scheduling repository', () => {
     expect(row!.box).toBe(2);
   });
 
-  it('should return all active scheduling rows', () => {
+  it('should return all scheduling rows (including archived)', () => {
     insertScheduling(db, scheduling);
-    insertScheduling(db, { ...scheduling, note_id: 'def456' });
+    insertScheduling(db, { ...scheduling, note_id: 'def456', archived: 1 });
     const all = getAllScheduling(db);
     expect(all).toHaveLength(2);
   });
 
-  it('should exclude archived from getAllScheduling', () => {
-    insertScheduling(db, scheduling);
-    insertScheduling(db, { ...scheduling, note_id: 'def456', archived: 1 });
-    const all = getAllScheduling(db);
-    expect(all).toHaveLength(1);
-  });
-
-  it('should find due notes', () => {
+  it('should find only active due notes', () => {
     insertScheduling(db, scheduling);
     insertScheduling(db, {
       ...scheduling,
       note_id: 'def456',
       due_date: '2025-06-03',
+      archived: 1,
     });
     const due = getDueNotes(db, '2025-06-01', 10);
     expect(due).toHaveLength(1);

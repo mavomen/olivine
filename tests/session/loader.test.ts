@@ -34,21 +34,13 @@ describe('session loader', () => {
   it('should load due notes into a session', () => {
     addNote('a');
     addNote('b');
-    const session = loadDueSession(db, 10);
+    const session = loadDueSession(db);
     expect(session).not.toBeNull();
     expect(session!.notes).toHaveLength(2);
   });
 
   it('should return null when no notes are due', () => {
-    const session = loadDueSession(db, 10);
+    const session = loadDueSession(db);
     expect(session).toBeNull();
-  });
-
-  it('should respect the limit', () => {
-    addNote('a');
-    addNote('b');
-    addNote('c');
-    const session = loadDueSession(db, 2);
-    expect(session!.notes).toHaveLength(2);
   });
 });
