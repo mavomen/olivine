@@ -11,13 +11,14 @@ export function buildReviewCommand(): Command {
     .description('Start an interactive review session')
     .argument('<vaultPath>', 'Path to the Obsidian vault')
     .option('--tui', 'Use terminal TUI (blessed) instead of prompts')
-    .action(async (vaultPath: string, options: { tui?: boolean }) => {
+    .option('--tag <tag>', 'Only review cards with this tag')
+    .action(async (vaultPath: string, options: { tui?: boolean; tag?: string }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
 
-        const session = loadDueSession(db);
+        const session = loadDueSession(db, options.tag);
         if (!session) {
           const stats = getStats(db);
           console.log('All caught up! No notes due for review.');

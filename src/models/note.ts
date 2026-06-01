@@ -61,6 +61,12 @@ export function getNotesByTag(db: Database, tag: string): NoteRow[] {
   });
 }
 
+export function getNoteIdsByTag(db: Database, tag: string): Set<string> {
+  const results = db.exec(`SELECT id FROM notes WHERE tags LIKE '%' || ? || '%'`);
+  if (results.length === 0) return new Set();
+  return new Set(results[0]!.values.map((row) => row[0] as string));
+}
+
 export function deleteNote(db: Database, id: string): void {
   db.run('DELETE FROM notes WHERE id = ?', [id]);
 }

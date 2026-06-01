@@ -3,6 +3,7 @@ import blessed from 'blessed';
 export interface AddCardResult {
   title: string;
   content: string;
+  tags: string;
 }
 
 type Mode = 'INSERT' | 'NORMAL';
@@ -10,8 +11,10 @@ type Mode = 'INSERT' | 'NORMAL';
 interface UndoSnapshot {
   questionBuf: string;
   answerBuf: string;
+  tagsBuf: string;
   qCursor: number;
   aCursor: number;
+  tCursor: number;
 }
 
 export function showAddCardForm(
@@ -20,6 +23,7 @@ export function showAddCardForm(
   onCancel: () => void,
   initialTitle: string = '',
   initialContent: string = '',
+  initialTags: string = '',
 ): Promise<void> {
   return new Promise((resolve) => {
     const screen = blessed.screen({
@@ -33,7 +37,7 @@ export function showAddCardForm(
       top: 'center',
       left: 'center',
       width: 80,
-      height: 24,
+      height: 28,
       border: 'line',
       label: initialTitle ? ' Edit Card ' : ' New Card ',
       style: { border: { fg: 'cyan' } },
@@ -48,7 +52,6 @@ export function showAddCardForm(
       content: 'QUESTION (front of card):',
       style: { fg: 'yellow', bold: true },
     });
-
     const questionBox = blessed.box({
       parent: form,
       top: 2,
@@ -67,7 +70,7 @@ export function showAddCardForm(
 
     blessed.line({
       parent: form,
-      top: 7,
+      top: 6,
       left: 0,
       right: 0,
       orientation: 'horizontal',
@@ -76,26 +79,45 @@ export function showAddCardForm(
 
     blessed.text({
       parent: form,
-      top: 8,
+      top: 7,
       left: 3,
       content: 'ANSWER (back of card):',
       style: { fg: 'yellow', bold: true },
     });
-
     const answerBox = blessed.box({
       parent: form,
-      top: 9,
+      top: 8,
       left: 3,
       right: 3,
-      height: 10,
+      height: 8,
       border: 'line',
       style: { border: { fg: 'grey' }, bg: 'black', fg: 'white' },
-      scrollable: true,
-      alwaysScroll: true,
+      scrollable: false,
       tags: false,
       content: initialContent || ' ',
       keys: true,
       vi: true,
+    });
+
+    blessed.text({
+      parent: form,
+      top: 17,
+      left: 3,
+      content: 'TAGS (comma-separated):',
+      style: { fg: 'yellow', bold: true },
+    });
+    const tagsBox = blessed.box({
+      parent: form,
+      top: 18,
+      left: 3,
+      right: 3,
+      height: 3,
+      border: 'line',
+      style: { border: { fg: 'grey' }, bg: 'black', fg: 'white' },
+      scrollable: false,
+      tags: false,
+      content: initialTags || ' ',
+      keys: true,
     });
 
     const footer = blessed.box({
@@ -109,12 +131,17 @@ export function showAddCardForm(
       padding: { left: 2, right: 2 },
     });
 
+    const ANSWER_VISIBLE_LINES = 6;
+
     let mode: Mode = 'INSERT';
-    let focused: 'question' | 'answer' = 'question';
+    let focused: 'question' | 'answer' | 'tags' = 'question';
     let questionBuf = initialTitle;
     let answerBuf = initialContent;
+    let tagsBuf = initialTags;
     let qCursor = initialTitle.length;
     let aCursor = initialContent.length;
+    let tCursor = initialTags.length;
+    let aScrollOffset = 0;
 
     let pendingOp = '';
     let undoStack: UndoSnapshot[] = [];
@@ -136,7 +163,7 @@ export function showAddCardForm(
     }
 
     function saveSnapshot(): UndoSnapshot {
-      return { questionBuf, answerBuf, qCursor, aCursor };
+      return { questionBuf, answerBuf, tagsBuf, qCursor, aCursor, tCursor };
     }
 
     function pushUndo(): void {
@@ -149,8 +176,10 @@ export function showAddCardForm(
       if (snap) {
         questionBuf = snap.questionBuf;
         answerBuf = snap.answerBuf;
+        tagsBuf = snap.tagsBuf;
         qCursor = snap.qCursor;
         aCursor = snap.aCursor;
+        tCursor = snap.tCursor;
       }
     }
 
@@ -161,13 +190,40 @@ export function showAddCardForm(
     }
 
     function renderQuestion() {
-      const content = focused === 'question' ? renderWithCursor(questionBuf, qCursor) : questionBuf || ' ';
+      const content =
+        focused === 'question' ? renderWithCursor(questionBuf, qCursor) : questionBuf || ' ';
       questionBox.setContent(content);
     }
 
     function renderAnswer() {
-      const content = focused === 'answer' ? renderWithCursor(answerBuf, aCursor) : answerBuf || ' ';
-      answerBox.setContent(content);
+      const lines = getAnswerLines();
+
+      if (focused === 'answer') {
+        const { line: cursorLine, col: cursorCol } = answerLineCol();
+
+        if (cursorLine < aScrollOffset) {
+          aScrollOffset = cursorLine;
+        } else if (cursorLine >= aScrollOffset + ANSWER_VISIBLE_LINES) {
+          aScrollOffset = cursorLine - ANSWER_VISIBLE_LINES + 1;
+        }
+
+        const visibleLines = lines.slice(aScrollOffset, aScrollOffset + ANSWER_VISIBLE_LINES);
+        const localLine = cursorLine - aScrollOffset;
+
+        const rendered = visibleLines.map((l, i) =>
+          i === localLine ? l.slice(0, cursorCol) + '\x1b[7m \x1b[27m' + l.slice(cursorCol) : l,
+        );
+
+        answerBox.setContent(rendered.join('\n') || ' ');
+      } else {
+        const visibleLines = lines.slice(aScrollOffset, aScrollOffset + ANSWER_VISIBLE_LINES);
+        answerBox.setContent(visibleLines.join('\n') || ' ');
+      }
+    }
+
+    function renderTags() {
+      const content = focused === 'tags' ? renderWithCursor(tagsBuf, tCursor) : tagsBuf || ' ';
+      tagsBox.setContent(content);
     }
 
     function updateFooter() {
@@ -177,7 +233,7 @@ export function showAddCardForm(
       if (mode === 'INSERT') {
         footer.setContent(`${base}   Tab:switch  Ctrl+S:save  Ctrl+Q:quit`);
       } else {
-        footer.setContent(`${base}   h/l:move  i/a:edit  x:delete  q:quit  dd,dw,yy,ciw,...`);
+        footer.setContent(`${base}   h/l:move  i/a:edit  x:delete  q:quit`);
       }
       footer.style.bg = mode === 'INSERT' ? 'blue' : 'green';
     }
@@ -185,11 +241,15 @@ export function showAddCardForm(
     function resetFields() {
       questionBuf = '';
       answerBuf = '';
+      tagsBuf = '';
       qCursor = 0;
       aCursor = 0;
+      tCursor = 0;
+      aScrollOffset = 0;
       focused = 'question';
       questionBox.style.border = { fg: 'yellow' };
       answerBox.style.border = { fg: 'grey' };
+      tagsBox.style.border = { fg: 'grey' };
       undoStack = [];
       renderAll();
     }
@@ -197,6 +257,7 @@ export function showAddCardForm(
     function renderAll() {
       renderQuestion();
       renderAnswer();
+      renderTags();
       updateFooter();
       screen.render();
     }
@@ -206,9 +267,12 @@ export function showAddCardForm(
       if (focused === 'question') {
         questionBuf = questionBuf.slice(0, qCursor) + ch + questionBuf.slice(qCursor);
         qCursor++;
-      } else {
+      } else if (focused === 'answer') {
         answerBuf = answerBuf.slice(0, aCursor) + ch + answerBuf.slice(aCursor);
         aCursor++;
+      } else {
+        tagsBuf = tagsBuf.slice(0, tCursor) + ch + tagsBuf.slice(tCursor);
+        tCursor++;
       }
     }
 
@@ -220,6 +284,9 @@ export function showAddCardForm(
       } else if (focused === 'answer' && aCursor > 0) {
         answerBuf = answerBuf.slice(0, aCursor - 1) + answerBuf.slice(aCursor);
         aCursor--;
+      } else if (focused === 'tags' && tCursor > 0) {
+        tagsBuf = tagsBuf.slice(0, tCursor - 1) + tagsBuf.slice(tCursor);
+        tCursor--;
       }
     }
 
@@ -229,20 +296,24 @@ export function showAddCardForm(
         questionBuf = questionBuf.slice(0, qCursor) + questionBuf.slice(qCursor + 1);
       } else if (focused === 'answer' && aCursor < answerBuf.length) {
         answerBuf = answerBuf.slice(0, aCursor) + answerBuf.slice(aCursor + 1);
+      } else if (focused === 'tags' && tCursor < tagsBuf.length) {
+        tagsBuf = tagsBuf.slice(0, tCursor) + tagsBuf.slice(tCursor + 1);
       }
     }
 
     function moveCursor(dir: number) {
       if (focused === 'question') {
         qCursor = Math.max(0, Math.min(qCursor + dir, questionBuf.length));
-      } else {
+      } else if (focused === 'answer') {
         aCursor = Math.max(0, Math.min(aCursor + dir, answerBuf.length));
+      } else {
+        tCursor = Math.max(0, Math.min(tCursor + dir, tagsBuf.length));
       }
     }
 
     function moveCursorWord(dir: number) {
-      const buf = focused === 'question' ? questionBuf : answerBuf;
-      const cur = focused === 'question' ? qCursor : aCursor;
+      const buf = focused === 'question' ? questionBuf : focused === 'answer' ? answerBuf : tagsBuf;
+      const cur = focused === 'question' ? qCursor : focused === 'answer' ? aCursor : tCursor;
       let pos = cur;
       if (dir > 0) {
         while (pos < buf.length && !buf[pos]?.match(/\s/)) pos++;
@@ -252,25 +323,25 @@ export function showAddCardForm(
         while (pos > 0 && !buf[pos - 1]?.match(/\s/)) pos--;
       }
       if (focused === 'question') qCursor = pos;
-      else aCursor = pos;
+      else if (focused === 'answer') aCursor = pos;
+      else tCursor = pos;
     }
 
     function deleteToEndOfLine() {
       pushUndo();
-      if (focused === 'question') {
-        questionBuf = questionBuf.slice(0, qCursor);
-      } else {
+      if (focused === 'question') questionBuf = questionBuf.slice(0, qCursor);
+      else if (focused === 'answer') {
         const { line, lines } = answerLineCol();
         lines[line] = lines[line]?.slice(0, aCursor) || '';
         answerBuf = lines.join('\n');
         aCursor = Math.min(aCursor, answerBuf.length);
-      }
+      } else tagsBuf = tagsBuf.slice(0, tCursor);
     }
 
     function deleteWord(includeTrailingSpaces: boolean) {
       pushUndo();
-      const buf = focused === 'question' ? questionBuf : answerBuf;
-      const cur = focused === 'question' ? qCursor : aCursor;
+      const buf = focused === 'question' ? questionBuf : focused === 'answer' ? answerBuf : tagsBuf;
+      const cur = focused === 'question' ? qCursor : focused === 'answer' ? aCursor : tCursor;
       let end = cur;
       if (buf[cur]?.match(/\s/)) while (end < buf.length && buf[end]?.match(/\s/)) end++;
       while (end < buf.length && !buf[end]?.match(/\s/)) end++;
@@ -279,29 +350,49 @@ export function showAddCardForm(
       if (focused === 'question') {
         questionBuf = newBuf;
         qCursor = Math.min(qCursor, newBuf.length);
-      } else {
+      } else if (focused === 'answer') {
         answerBuf = newBuf;
         aCursor = Math.min(aCursor, newBuf.length);
+      } else {
+        tagsBuf = newBuf;
+        tCursor = Math.min(tCursor, newBuf.length);
       }
     }
 
     function deleteInnerWord() {
       pushUndo();
-      const buf = focused === 'question' ? questionBuf : answerBuf;
-      const cur = focused === 'question' ? qCursor : aCursor;
+      const buf = focused === 'question' ? questionBuf : focused === 'answer' ? answerBuf : tagsBuf;
+      const cur = focused === 'question' ? qCursor : focused === 'answer' ? aCursor : tCursor;
       if (!buf[cur]?.match(/\S/)) return;
       let start = cur;
       while (start > 0 && buf[start - 1]?.match(/\S/)) start--;
       let end = cur;
       while (end < buf.length && buf[end]?.match(/\S/)) end++;
       const newBuf = buf.slice(0, start) + buf.slice(end);
-      if (focused === 'question') { questionBuf = newBuf; qCursor = start; }
-      else { answerBuf = newBuf; aCursor = start; }
+      if (focused === 'question') {
+        questionBuf = newBuf;
+        qCursor = start;
+      } else if (focused === 'answer') {
+        answerBuf = newBuf;
+        aCursor = start;
+      } else {
+        tagsBuf = newBuf;
+        tCursor = start;
+      }
     }
 
     function deleteCurrentLine() {
       pushUndo();
-      if (focused === 'question') { questionBuf = ''; qCursor = 0; return; }
+      if (focused === 'question') {
+        questionBuf = '';
+        qCursor = 0;
+        return;
+      }
+      if (focused === 'tags') {
+        tagsBuf = '';
+        tCursor = 0;
+        return;
+      }
       const { line, lines } = answerLineCol();
       lines.splice(line, 1);
       answerBuf = lines.join('\n');
@@ -310,7 +401,11 @@ export function showAddCardForm(
 
     function yankLine() {
       if (focused === 'question') yankRegister = questionBuf;
-      else { const { line, lines } = answerLineCol(); yankRegister = lines[line] ?? ''; }
+      else if (focused === 'tags') yankRegister = tagsBuf;
+      else {
+        const { line, lines } = answerLineCol();
+        yankRegister = lines[line] ?? '';
+      }
     }
 
     function pasteAfter() {
@@ -319,6 +414,9 @@ export function showAddCardForm(
       if (focused === 'question') {
         questionBuf = questionBuf.slice(0, qCursor) + yankRegister + questionBuf.slice(qCursor);
         qCursor += yankRegister.length;
+      } else if (focused === 'tags') {
+        tagsBuf = tagsBuf.slice(0, tCursor) + yankRegister + tagsBuf.slice(tCursor);
+        tCursor += yankRegister.length;
       } else {
         const { line, lines } = answerLineCol();
         lines.splice(line + 1, 0, yankRegister);
@@ -339,24 +437,26 @@ export function showAddCardForm(
       updateFooter();
     }
 
-    // Unified key handler
     screen.on('keypress', (ch: string, key: { name?: string; full?: string }) => {
-      // Ctrl+S always saves
       if (key.full === 'C-s') {
         if (!questionBuf.trim()) {
           footer.setContent(' Question cannot be empty!');
           footer.style.bg = 'red';
           screen.render();
-          setTimeout(() => { updateFooter(); screen.render(); }, 1500);
+          setTimeout(() => {
+            updateFooter();
+            screen.render();
+          }, 1500);
           return;
         }
-        onSave({ title: questionBuf.trim(), content: answerBuf.trim() });
-        if (initialTitle) { screen.destroy(); resolve(); }
-        else resetFields();
+        onSave({ title: questionBuf.trim(), content: answerBuf.trim(), tags: tagsBuf.trim() });
+        if (initialTitle) {
+          screen.destroy();
+          resolve();
+        } else resetFields();
         return;
       }
 
-      // Ctrl+Q always cancels
       if (key.full === 'C-q') {
         screen.destroy();
         onCancel();
@@ -364,15 +464,19 @@ export function showAddCardForm(
         return;
       }
 
-      // Tab always switches field
       if (key.name === 'tab') {
         if (focused === 'question') {
           focused = 'answer';
           questionBox.style.border = { fg: 'grey' };
           answerBox.style.border = { fg: 'yellow' };
+          tagsBox.style.border = { fg: 'grey' };
+        } else if (focused === 'answer') {
+          focused = 'tags';
+          answerBox.style.border = { fg: 'grey' };
+          tagsBox.style.border = { fg: 'yellow' };
         } else {
           focused = 'question';
-          answerBox.style.border = { fg: 'grey' };
+          tagsBox.style.border = { fg: 'grey' };
           questionBox.style.border = { fg: 'yellow' };
         }
         pendingOp = '';
@@ -380,7 +484,6 @@ export function showAddCardForm(
         return;
       }
 
-      // Esc: INSERT -> NORMAL, NORMAL -> do nothing
       if (key.name === 'escape') {
         if (mode === 'INSERT') {
           mode = 'NORMAL';
@@ -392,14 +495,45 @@ export function showAddCardForm(
       }
 
       if (mode === 'INSERT') {
-        // Insert mode typing
-        if (key.name === 'left') { moveCursor(-1); renderAll(); return; }
-        if (key.name === 'right') { moveCursor(1); renderAll(); return; }
-        if (key.name === 'home') { if (focused === 'question') qCursor = 0; else aCursor = 0; renderAll(); return; }
-        if (key.name === 'end') { if (focused === 'question') qCursor = questionBuf.length; else aCursor = answerBuf.length; renderAll(); return; }
-        if (key.name === 'backspace') { deleteChar(); renderAll(); return; }
-        if (key.name === 'delete') { forwardDelete(); renderAll(); return; }
-        if (key.name === 'return') { insertChar('\n'); renderAll(); return; }
+        if (key.name === 'left') {
+          moveCursor(-1);
+          renderAll();
+          return;
+        }
+        if (key.name === 'right') {
+          moveCursor(1);
+          renderAll();
+          return;
+        }
+        if (key.name === 'home') {
+          if (focused === 'question') qCursor = 0;
+          else if (focused === 'answer') aCursor = 0;
+          else tCursor = 0;
+          renderAll();
+          return;
+        }
+        if (key.name === 'end') {
+          if (focused === 'question') qCursor = questionBuf.length;
+          else if (focused === 'answer') aCursor = answerBuf.length;
+          else tCursor = tagsBuf.length;
+          renderAll();
+          return;
+        }
+        if (key.name === 'backspace') {
+          deleteChar();
+          renderAll();
+          return;
+        }
+        if (key.name === 'delete') {
+          forwardDelete();
+          renderAll();
+          return;
+        }
+        if (key.name === 'return') {
+          insertChar('\n');
+          renderAll();
+          return;
+        }
         if (ch && ch.length === 1) {
           insertChar(ch);
           renderAll();
@@ -407,55 +541,198 @@ export function showAddCardForm(
         return;
       }
 
-      // NORMAL mode — finish pending operators first
       if (pendingOp) {
         const combo = pendingOp + ch;
-        if (combo === 'dd') { deleteCurrentLine(); pendingOp = ''; renderAll(); return; }
-        if (combo === 'dw') { deleteWord(true); pendingOp = ''; renderAll(); return; }
-        if (combo === 'de') { deleteWord(false); pendingOp = ''; renderAll(); return; }
-        if (combo === 'ciw') { deleteInnerWord(); mode = 'INSERT'; pendingOp = ''; renderAll(); return; }
-        if (combo === 'yy') { yankLine(); pendingOp = ''; renderAll(); return; }
-        if (combo === 'gg') { if (focused === 'question') qCursor = 0; else aCursor = 0; pendingOp = ''; renderAll(); return; }
-        // continue building operator sequence
-        if ('dcyg'.includes(ch) && pendingOp.length === 1 && 'dcyg'.includes(pendingOp[0]!)) {
-          pendingOp += ch;
-          updateFooter(); screen.render();
+        if (combo === 'dd') {
+          deleteCurrentLine();
+          pendingOp = '';
+          renderAll();
           return;
         }
-        if (pendingOp === 'c' && ch === 'i') { pendingOp = 'ci'; updateFooter(); screen.render(); return; }
-        // unknown combo — cancel
+        if (combo === 'dw') {
+          deleteWord(true);
+          pendingOp = '';
+          renderAll();
+          return;
+        }
+        if (combo === 'de') {
+          deleteWord(false);
+          pendingOp = '';
+          renderAll();
+          return;
+        }
+        if (combo === 'ciw') {
+          deleteInnerWord();
+          mode = 'INSERT';
+          pendingOp = '';
+          renderAll();
+          return;
+        }
+        if (combo === 'yy') {
+          yankLine();
+          pendingOp = '';
+          renderAll();
+          return;
+        }
+        if (combo === 'gg') {
+          if (focused === 'question') qCursor = 0;
+          else if (focused === 'answer') aCursor = 0;
+          else tCursor = 0;
+          pendingOp = '';
+          renderAll();
+          return;
+        }
+        if ('dcyg'.includes(ch) && pendingOp.length === 1 && 'dcyg'.includes(pendingOp[0]!)) {
+          pendingOp += ch;
+          updateFooter();
+          screen.render();
+          return;
+        }
+        if (pendingOp === 'c' && ch === 'i') {
+          pendingOp = 'ci';
+          updateFooter();
+          screen.render();
+          return;
+        }
         pendingOp = '';
         updateFooter();
         screen.render();
-        // fall through to process as single command
       }
 
-      // Single NORMAL commands
       switch (ch) {
-        case 'q': screen.destroy(); onCancel(); resolve(); break;
-        case 'i': mode = 'INSERT'; updateFooter(); screen.render(); break;
-        case 'a': moveCursor(1); mode = 'INSERT'; updateFooter(); screen.render(); break;
-        case 'I': if (focused === 'question') qCursor = 0; else aCursor = 0; mode = 'INSERT'; updateFooter(); screen.render(); break;
-        case 'A': if (focused === 'question') qCursor = questionBuf.length; else aCursor = answerBuf.length; mode = 'INSERT'; updateFooter(); screen.render(); break;
-        case 'h': moveCursor(-1); renderAll(); break;
-        case 'l': moveCursor(1); renderAll(); break;
-        case '0': if (focused === 'question') qCursor = 0; else aCursor = 0; renderAll(); break;
-        case '$': if (focused === 'question') qCursor = questionBuf.length; else aCursor = answerBuf.length; renderAll(); break;
-        case 'x': deleteChar(); renderAll(); break;
-        case 'D': deleteToEndOfLine(); renderAll(); break;
-        case 'u': popUndo(); renderAll(); break;
-        case 'w': moveCursorWord(1); renderAll(); break;
-        case 'b': moveCursorWord(-1); renderAll(); break;
-        case 'g': pendingOp = 'g'; updateFooter(); screen.render(); break;
-        case 'G': if (focused === 'question') qCursor = questionBuf.length; else aCursor = answerBuf.length; renderAll(); break;
-        case 'd': pendingOp = 'd'; updateFooter(); screen.render(); break;
-        case 'c': pendingOp = 'c'; updateFooter(); screen.render(); break;
-        case 'y': pendingOp = 'y'; updateFooter(); screen.render(); break;
-        case 'p': pasteAfter(); renderAll(); break;
-        case 'o': openLine(false); renderAll(); break;
-        case 'O': openLine(true); renderAll(); break;
+        case 'q':
+          screen.destroy();
+          onCancel();
+          resolve();
+          break;
+        case 'i':
+          mode = 'INSERT';
+          updateFooter();
+          screen.render();
+          break;
+        case 'a':
+          moveCursor(1);
+          mode = 'INSERT';
+          updateFooter();
+          screen.render();
+          break;
+        case 'I':
+          if (focused === 'question') qCursor = 0;
+          else if (focused === 'answer') aCursor = 0;
+          else tCursor = 0;
+          mode = 'INSERT';
+          updateFooter();
+          screen.render();
+          break;
+        case 'A':
+          if (focused === 'question') qCursor = questionBuf.length;
+          else if (focused === 'answer') aCursor = answerBuf.length;
+          else tCursor = tagsBuf.length;
+          mode = 'INSERT';
+          updateFooter();
+          screen.render();
+          break;
+        case 'h':
+          moveCursor(-1);
+          renderAll();
+          break;
+        case 'l':
+          moveCursor(1);
+          renderAll();
+          break;
+        case 'j': {
+          if (focused === 'answer') {
+            const { line, col, lines } = answerLineCol();
+            if (line < lines.length - 1) {
+              const newCol = Math.min(col, lines[line + 1]!.length);
+              aCursor = lines.slice(0, line + 1).reduce((s, l) => s + l.length + 1, 0) + newCol;
+            }
+          }
+          renderAll();
+          break;
+        }
+        case 'k': {
+          if (focused === 'answer') {
+            const { line, col, lines } = answerLineCol();
+            if (line > 0) {
+              const newCol = Math.min(col, lines[line - 1]!.length);
+              aCursor = lines.slice(0, line - 1).reduce((s, l) => s + l.length + 1, 0) + newCol;
+            }
+          }
+          renderAll();
+          break;
+        }
+        case '0':
+          if (focused === 'question') qCursor = 0;
+          else if (focused === 'answer') aCursor = 0;
+          else tCursor = 0;
+          renderAll();
+          break;
+        case '$':
+          if (focused === 'question') qCursor = questionBuf.length;
+          else if (focused === 'answer') aCursor = answerBuf.length;
+          else tCursor = tagsBuf.length;
+          renderAll();
+          break;
+        case 'x':
+          deleteChar();
+          renderAll();
+          break;
+        case 'D':
+          deleteToEndOfLine();
+          renderAll();
+          break;
+        case 'u':
+          popUndo();
+          renderAll();
+          break;
+        case 'w':
+          moveCursorWord(1);
+          renderAll();
+          break;
+        case 'b':
+          moveCursorWord(-1);
+          renderAll();
+          break;
+        case 'g':
+          pendingOp = 'g';
+          updateFooter();
+          screen.render();
+          break;
+        case 'G':
+          if (focused === 'question') qCursor = questionBuf.length;
+          else if (focused === 'answer') aCursor = answerBuf.length;
+          else tCursor = tagsBuf.length;
+          renderAll();
+          break;
+        case 'd':
+          pendingOp = 'd';
+          updateFooter();
+          screen.render();
+          break;
+        case 'c':
+          pendingOp = 'c';
+          updateFooter();
+          screen.render();
+          break;
+        case 'y':
+          pendingOp = 'y';
+          updateFooter();
+          screen.render();
+          break;
+        case 'p':
+          pasteAfter();
+          renderAll();
+          break;
+        case 'o':
+          openLine(false);
+          renderAll();
+          break;
+        case 'O':
+          openLine(true);
+          renderAll();
+          break;
         default:
-          // ignore unknown normal keys
           break;
       }
     });
