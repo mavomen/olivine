@@ -1,3 +1,4 @@
+cat > .github/workflows/cd.yml << 'EOF'
 name: CD
 
 on:
@@ -6,9 +7,21 @@ on:
       - 'v*'
 
 jobs:
-  publish:
+  build-and-test:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  publish:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,8 +30,8 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
       - run: npm run build
-      - run: npm test
-      - name: Publish to npm
+      - name: Publish to npm (if token is set)
+        if: env.NPM_TOKEN != ''
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

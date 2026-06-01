@@ -50,7 +50,7 @@ export function getAllNotes(db: Database): NoteRow[] {
   });
 }
 
-export function getNotesByTag(db: Database, tag: string): NoteRow[] {
+export function getNotesByTag(db: Database, _tag: string): NoteRow[] {
   const results = db.exec(`SELECT * FROM notes WHERE tags LIKE '%' || ? || '%' ORDER BY path`);
   if (results.length === 0) return [];
   const columns = results[0]!.columns;
@@ -59,6 +59,12 @@ export function getNotesByTag(db: Database, tag: string): NoteRow[] {
     columns.forEach((col: string, i: number) => (obj[col] = row[i]));
     return obj as unknown as NoteRow;
   });
+}
+
+export function getNoteIdsByTag(db: Database, _tag: string): Set<string> {
+  const results = db.exec(`SELECT id FROM notes WHERE tags LIKE '%' || ? || '%'`);
+  if (results.length === 0) return new Set();
+  return new Set(results[0]!.values.map((row) => row[0] as string));
 }
 
 export function deleteNote(db: Database, id: string): void {
