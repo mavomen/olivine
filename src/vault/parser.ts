@@ -4,6 +4,7 @@ export interface ParsedNote {
   title: string;
   content: string;
   wordCount: number;
+  tags: string[];
 }
 
 export function parseMarkdown(raw: string): ParsedNote {
@@ -12,10 +13,16 @@ export function parseMarkdown(raw: string): ParsedNote {
   const wordCount = content.split(/\s+/).filter(Boolean).length;
 
   if (!title) {
-    // Fallback: extract first H1 heading from content
     const match = content.match(/^#\s+(.+)$/m);
     title = match ? match[1]!.trim() : 'Untitled';
   }
 
-  return { title, content, wordCount };
+  let tags: string[] = [];
+  if (Array.isArray(data.tags)) {
+    tags = data.tags.map((t: unknown) => String(t));
+  } else if (typeof data.tags === 'string') {
+    tags = data.tags.split(',').map(t => t.trim()).filter(Boolean);
+  }
+
+  return { title, content, wordCount, tags };
 }

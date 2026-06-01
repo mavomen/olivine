@@ -7,13 +7,15 @@ export interface SchedulingRow {
   interval_days: number;
   due_date: string;
   last_reviewed: string | null;
+  box: number;
+  archived: number;
 }
 
 export function insertScheduling(db: Database, row: SchedulingRow): void {
   db.run(
-    `INSERT OR REPLACE INTO scheduling (note_id, ease_factor, repetitions, interval_days, due_date, last_reviewed)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [row.note_id, row.ease_factor, row.repetitions, row.interval_days, row.due_date, row.last_reviewed],
+    `INSERT OR REPLACE INTO scheduling (note_id, ease_factor, repetitions, interval_days, due_date, last_reviewed, box, archived)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [row.note_id, row.ease_factor, row.repetitions, row.interval_days, row.due_date, row.last_reviewed, row.box, row.archived],
   );
 }
 
@@ -49,10 +51,18 @@ export function getAllScheduling(db: Database): SchedulingRow[] {
 }
 
 export function getDueNotes(db: Database, today: string, limit: number): SchedulingRow[] {
-  return getAllSchedulingRows(db, 'SELECT * FROM scheduling WHERE due_date <= ? ORDER BY due_date ASC LIMIT ?', [
-    today,
-    limit,
-  ]);
+  return getAllSchedulingRows(db, 'SELECT * FROM scheduling WHERE due_date <= ? AND archived = 0 ORDER BY due_date ASC LIMIT ?', [today, limit]);
+}
+
+export function getDueNotesByTag(db: Database, today: string, tag: string, limit: number): SchedulingRow[] {
+  return getAllSchedulingRows(
+    db,
+    `SELECT s.* FROM scheduling s
+     JOIN notes n ON s.note_id = n.id
+     WHERE s.due_date <= ? AND s.archived = 0 AND n.tags LIKE '%' || ? || '%'
+     ORDER BY s.due_date ASC LIMIT ?`,
+    [today, tag, limit]
+  );
 }
 
 export function deleteScheduling(db: Database, noteId: string): void {

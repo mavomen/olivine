@@ -21,27 +21,45 @@ describe('review command', () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('should report no due notes when vault is empty', () => {
+  it('should report no due notes and show stats when vault is empty', () => {
     const output = execSync(`${CLI} review "${tmpDir}"`, { encoding: 'utf-8', stdio: 'pipe' });
-    expect(output).toMatch(/No notes due/);
+    expect(output).toMatch(/All caught up/);
+    expect(output).toMatch(/Total notes/);
+  });
+
+  it('should report no due notes with --tui when vault is empty', () => {
+    const output = execSync(`${CLI} review "${tmpDir}" --tui`, { encoding: 'utf-8', stdio: 'pipe' });
+    expect(output).toMatch(/All caught up/);
+    expect(output).toMatch(/Total notes/);
   });
 
   it('should attempt review for due notes', async () => {
     await fs.writeFile(path.join(tmpDir, 'note.md'), '# Test Note');
     execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
 
-    // The review command is interactive and requires user input;
-    // we just ensure it doesn't crash when stdin is closed.
     try {
       execSync(`${CLI} review "${tmpDir}"`, {
         encoding: 'utf-8',
         stdio: 'pipe',
-        input: '\n4\n', // press enter to reveal, then choose quality 4
+        input: '\n4\n',
         timeout: 5000,
       });
     } catch (e: unknown) {
       const err = e as { stdout?: string; stderr?: string };
       expect(err.stdout || err.stderr || '').toBeDefined();
     }
+  });
+
+  it('should handle --tui flag in non-interactive environment (fallback)', async () => {
+    await fs.writeFile(path.join(tmpDir, 'note.md'), '# TUI Note');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const output = execSync(`${CLI} review "${tmpDir}" --tui`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+      timeout: 5000,
+    });
+
+    expect(output).toBeDefined();
   });
 });

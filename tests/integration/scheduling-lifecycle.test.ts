@@ -1,7 +1,7 @@
 import { createMemoryDb } from '../test-utils';
 import { bootstrapDatabase } from '../../src/database/bootstrap';
-import { insertNote, getAllNotes } from '../../src/models/note';
-import { getDueNotes } from '../../src/models/scheduling';
+import { insertNote } from '../../src/models/note';
+import { getDueNotes, getSchedulingForNote } from '../../src/models/scheduling';
 import { initializeScheduling, applyReview } from '../../src/scheduling/service';
 import type { NoteRow } from '../../src/models/note';
 
@@ -26,14 +26,14 @@ describe('scheduling lifecycle integration', () => {
       word_count: 2,
       created_at: '2025-01-01',
       updated_at: '2025-01-01',
+      tags: '[]',
     };
     insertNote(db, note);
     initializeScheduling(db, id);
-    // Override due_date for controlled testing
     db.run('UPDATE scheduling SET due_date = ? WHERE note_id = ?', [dueDate, id]);
   }
 
-  it('should progress notes from new to due, unreviewed stay due', () => {
+  it('should progress cards through boxes', () => {
     addNote('a', '2025-06-01');
     addNote('b', '2025-06-01');
 
@@ -41,45 +41,48 @@ describe('scheduling lifecycle integration', () => {
     let due = getDueNotes(db, '2025-06-01', 10);
     expect(due).toHaveLength(2);
 
-    // Review 'a' — rescheduled to 06-02
+    // Review 'a' correctly — promotes to Box 2
     applyReview(db, 'a', 4, '2025-06-01');
 
-    // On 06-01, only 'b' still due
+    // 'a' now in Box 2, due in 2 days
+    const a = getSchedulingForNote(db, 'a');
+    expect(a!.box).toBe(2);
+    expect(a!.due_date).toBe('2025-06-03');
+
+    // 'b' still due
     due = getDueNotes(db, '2025-06-01', 10);
     expect(due).toHaveLength(1);
     expect(due[0]!.note_id).toBe('b');
-
-    // On 06-02, both 'a' and 'b' are due ('b' unreviewed stays due)
-    due = getDueNotes(db, '2025-06-02', 10);
-    expect(due).toHaveLength(2);
-    const ids = due.map((d) => d.note_id).sort();
-    expect(ids).toEqual(['a', 'b']);
   });
 
-  it('should keep failed notes due within one day', () => {
+  it('should reset failed cards to Box 1', () => {
     addNote('fail', '2025-06-01');
-    applyReview(db, 'fail', 1, '2025-06-01');
+    applyReview(db, 'fail', 4, '2025-06-01'); // Box 2
+    applyReview(db, 'fail', 4, '2025-06-02'); // Box 3
 
-    let due = getDueNotes(db, '2025-06-02', 10);
-    expect(due).toHaveLength(1);
-
-    applyReview(db, 'fail', 0, '2025-06-02');
-    due = getDueNotes(db, '2025-06-03', 10);
-    expect(due).toHaveLength(1);
+    // Fail
+    applyReview(db, 'fail', 0, '2025-06-03');
+    const f = getSchedulingForNote(db, 'fail');
+    expect(f!.box).toBe(1);
+    expect(f!.due_date).toBe('2025-06-04'); // next day
   });
 
-  it('should schedule successful notes further into the future', () => {
+  it('should archive cards after Box 7 correct review', () => {
     addNote('master', '2025-06-01');
-    applyReview(db, 'master', 4, '2025-06-01'); // int=1, due 06-02
-    applyReview(db, 'master', 4, '2025-06-02'); // int=6, due 06-08
+    for (let i = 0; i < 6; i++) {
+      applyReview(db, 'master', 4, '2025-06-01'); // promote through boxes
+    }
+    // Now in Box 7
+    const before = getSchedulingForNote(db, 'master');
+    expect(before!.box).toBe(7);
 
-    let due = getDueNotes(db, '2025-06-08', 10);
-    expect(due).toHaveLength(1);
+    // One more correct answer
+    applyReview(db, 'master', 4, '2025-06-02');
+    const after = getSchedulingForNote(db, 'master');
+    expect(after!.archived).toBe(1);
 
-    applyReview(db, 'master', 5, '2025-06-08'); // int=~15, due 06-23
-    due = getDueNotes(db, '2025-06-23', 10);
-    expect(due).toHaveLength(1);
-    due = getDueNotes(db, '2025-06-20', 10);
-    expect(due).toHaveLength(0);
+    // Archived cards don't appear as due
+    const due = getDueNotes(db, '2099-01-01', 10);
+    expect(due.filter((d) => d.note_id === 'master')).toHaveLength(0);
   });
 });

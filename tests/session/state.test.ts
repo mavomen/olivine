@@ -16,6 +16,7 @@ const makeNote = (id: string): NoteRow => ({
   word_count: 1,
   created_at: '2025-01-01',
   updated_at: '2025-01-01',
+      tags: '[]',
 });
 
 describe('session state', () => {
@@ -43,7 +44,7 @@ describe('session state', () => {
     expect(session.notes[0]!.reviewed).toBe(true);
   });
 
-  it('should advance through notes', () => {
+  it('should advance through notes and push past end on summary', () => {
     const session = createSession(notes);
     expect(session.currentIndex).toBe(0);
 
@@ -55,7 +56,8 @@ describe('session state', () => {
 
     advanceNote(session);
     expect(session.phase).toBe('summary');
-    expect(session.currentIndex).toBe(2);
+    expect(session.currentIndex).toBe(3); // pushed past array so currentNote returns null
+    expect(currentNote(session)).toBeNull();
   });
 
   it('should calculate stats', () => {

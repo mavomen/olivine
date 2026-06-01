@@ -18,6 +18,7 @@ describe('review repository', () => {
       word_count: 2,
       created_at: '2025-01-01',
       updated_at: '2025-01-02',
+      tags: '[]',
     };
     insertNote(db, sampleNote);
   });
