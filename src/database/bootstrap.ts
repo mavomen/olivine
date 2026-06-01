@@ -4,12 +4,14 @@ import * as m001 from './migrations/001_notes.sql';
 import * as m002 from './migrations/002_reviews.sql';
 import * as m003 from './migrations/003_scheduling.sql';
 import * as m004 from './migrations/004_leitner.sql';
+import * as m005 from './migrations/005_tags.sql';
 
 const migrations = [
   { id: m001.id, name: m001.name, sql: m001.sql },
   { id: m002.id, name: m002.name, sql: m002.sql },
   { id: m003.id, name: m003.name, sql: m003.sql },
   { id: m004.id, name: m004.name, sql: m004.sql },
+  { id: m005.id, name: m005.name, sql: m005.sql },
 ];
 
 export function bootstrapDatabase(db: Database): void {

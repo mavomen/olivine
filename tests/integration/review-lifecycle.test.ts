@@ -30,6 +30,7 @@ describe('review lifecycle integration', () => {
       word_count: 2,
       created_at: '2025-01-01',
       updated_at: '2025-01-01',
+      tags: '[]',
     };
     insertNote(db, note);
     initializeScheduling(db, id);

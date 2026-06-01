@@ -23,6 +23,7 @@ describe('note repository', () => {
     word_count: 2,
     created_at: '2025-01-01',
     updated_at: '2025-01-02',
+      tags: '[]',
   };
 
   it('should insert and retrieve a note by id', () => {

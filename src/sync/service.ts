@@ -26,13 +26,13 @@ export async function syncVault(vaultPath: string, db: Database): Promise<{ adde
       word_count: parsed.wordCount,
       created_at: stat.birthtime.toISOString().split('T')[0]!,
       updated_at: stat.mtime.toISOString().split('T')[0]!,
+      tags: JSON.stringify(parsed.tags),
     };
     if (!existingPaths.has(file.relativePath)) {
       added++;
       insertNote(db, note);
       initializeScheduling(db, note.id);
     } else {
-      // Update content and metadata for existing notes
       insertNote(db, note);
     }
   }
