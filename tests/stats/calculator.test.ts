@@ -3,7 +3,7 @@ import { bootstrapDatabase } from '../../src/database/bootstrap';
 import { insertNote } from '../../src/models/note';
 import { initializeScheduling, applyReview } from '../../src/scheduling/service';
 import { insertReview } from '../../src/models/review';
-import { totalNotes, dueNotesCount, reviewedToday, averageEaseFactor, totalReviews, streak } from '../../src/stats/calculator';
+import { totalNotes, dueNotesCount, reviewedToday, boxDistribution, archivedCount, totalReviews, streak } from '../../src/stats/calculator';
 import type { NoteRow } from '../../src/models/note';
 
 describe('stats calculator', () => {
@@ -53,14 +53,19 @@ describe('stats calculator', () => {
     expect(reviewedToday(db, '2025-06-01')).toBe(2);
   });
 
-  it('should calculate average ease factor', () => {
+  it('should show box distribution', () => {
     addNote('a', '2025-06-01');
     addNote('b', '2025-06-01');
-    applyReview(db, 'a', 5, '2025-06-01');
-    // a: ease=2.6 (initial 2.5 + 0.1 for quality 5)
-    // b: ease=2.5 (unreviewed)
-    // avg = (2.6 + 2.5) / 2 = 2.55
-    expect(averageEaseFactor(db)).toBe(2.55);
+    applyReview(db, 'a', 4, '2025-06-01'); // promotes to Box 2
+    const dist = boxDistribution(db);
+    expect(dist[2]).toBe(1); // 'a' in Box 2
+    expect(dist[1]).toBe(1); // 'b' still in Box 1
+  });
+
+  it('should count archived cards', () => {
+    addNote('a', '2025-06-01');
+    db.run('UPDATE scheduling SET archived = 1 WHERE note_id = ?', ['a']);
+    expect(archivedCount(db)).toBe(1);
   });
 
   it('should count total reviews', () => {

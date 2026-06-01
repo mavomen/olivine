@@ -28,61 +28,46 @@ describe('scheduling service', () => {
   });
 
   describe('initializeScheduling', () => {
-    it('should create a scheduling record for a new note', () => {
+    it('should create a scheduling record in Box 1', () => {
       initializeScheduling(db, 'test-note');
       const row = getSchedulingForNote(db, 'test-note');
       expect(row).toBeTruthy();
-      expect(row!.ease_factor).toBe(2.5);
-      expect(row!.repetitions).toBe(0);
-      expect(row!.interval_days).toBe(0);
+      expect(row!.box).toBe(1);
+      expect(row!.archived).toBe(0);
     });
 
     it('should not overwrite existing scheduling', () => {
       initializeScheduling(db, 'test-note');
-      applyReview(db, 'test-note', 4, '2025-06-01');
+      applyReview(db, 'test-note', 4, '2025-06-01'); // promote to Box 2
       initializeScheduling(db, 'test-note');
       const row = getSchedulingForNote(db, 'test-note');
-      expect(row!.repetitions).toBe(1);
+      expect(row!.box).toBe(2);
     });
   });
 
-  describe('applyReview — successful reviews', () => {
-    it('should update scheduling after a successful review', () => {
+  describe('applyReview', () => {
+    it('should promote to Box 2 on correct answer', () => {
       initializeScheduling(db, 'test-note');
       const updated = applyReview(db, 'test-note', 4, '2025-06-01');
-      expect(updated.repetitions).toBe(1);
-      expect(updated.interval_days).toBe(1);
-      expect(updated.due_date).toBe('2025-06-02');
-      expect(updated.last_reviewed).toBe('2025-06-01');
+      expect(updated.box).toBe(2);
+      expect(updated.archived).toBe(0);
     });
 
-    it('should progress through multiple successful reviews', () => {
+    it('should reset to Box 1 on failed review', () => {
       initializeScheduling(db, 'test-note');
-      applyReview(db, 'test-note', 4, '2025-06-01'); // rep=1, int=1
-      applyReview(db, 'test-note', 4, '2025-06-02'); // rep=2, int=6
-      const row = getSchedulingForNote(db, 'test-note');
-      expect(row!.repetitions).toBe(2);
-      expect(row!.interval_days).toBe(6);
-      expect(row!.due_date).toBe('2025-06-08');
-    });
-  });
-
-  describe('applyReview — failed reviews', () => {
-    it('should reset repetitions after a failed review', () => {
-      initializeScheduling(db, 'test-note');
-      applyReview(db, 'test-note', 4, '2025-06-01'); // rep=1
+      applyReview(db, 'test-note', 4, '2025-06-01'); // Box 2
       const updated = applyReview(db, 'test-note', 1, '2025-06-02'); // fail
-      expect(updated.repetitions).toBe(0);
-      expect(updated.interval_days).toBe(1);
-      expect(updated.due_date).toBe('2025-06-03');
+      expect(updated.box).toBe(1);
+      expect(updated.archived).toBe(0);
     });
 
-    it('should reduce ease factor on failure', () => {
+    it('should archive after Box 7 correct review', () => {
       initializeScheduling(db, 'test-note');
-      applyReview(db, 'test-note', 4, '2025-06-01');
-      const updated = applyReview(db, 'test-note', 0, '2025-06-02');
-      expect(updated.ease_factor).toBeLessThan(2.5);
-      expect(updated.ease_factor).toBeGreaterThanOrEqual(1.3);
+      // Manually set to Box 7
+      db.run('UPDATE scheduling SET box = 7 WHERE note_id = ?', ['test-note']);
+      const updated = applyReview(db, 'test-note', 4, '2025-06-01');
+      expect(updated.box).toBe(7);
+      expect(updated.archived).toBe(1);
     });
   });
 });

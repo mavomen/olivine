@@ -1,6 +1,6 @@
 import { Database } from 'sql.js';
 import { getAllNotes } from '../models/note';
-import { getAllScheduling, getDueNotes } from '../models/scheduling';
+import { getDueNotes } from '../models/scheduling';
 import { getReviewCountToday, getTotalReviewCount } from '../models/review';
 
 export function totalNotes(db: Database): number {
@@ -15,11 +15,25 @@ export function reviewedToday(db: Database, today: string): number {
   return getReviewCountToday(db, today);
 }
 
-export function averageEaseFactor(db: Database): number {
-  const all = getAllScheduling(db);
-  if (all.length === 0) return 0;
-  const sum = all.reduce((acc, s) => acc + s.ease_factor, 0);
-  return Math.round((sum / all.length) * 100) / 100;
+export function boxDistribution(db: Database): Record<number, number> {
+  const result = db.exec(
+    'SELECT box, COUNT(*) as count FROM scheduling WHERE archived = 0 GROUP BY box ORDER BY box'
+  );
+  const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
+  if (result.length > 0) {
+    for (const row of result[0]!.values) {
+      dist[row[0] as number] = row[1] as number;
+    }
+  }
+  return dist;
+}
+
+export function archivedCount(db: Database): number {
+  const row = db.exec('SELECT COUNT(*) as count FROM scheduling WHERE archived = 1');
+  if (row.length > 0) {
+    return row[0]!.values[0]![0] as number;
+  }
+  return 0;
 }
 
 export function totalReviews(db: Database): number {
@@ -27,8 +41,6 @@ export function totalReviews(db: Database): number {
 }
 
 export function streak(db: Database, today: string): number {
-  // Count consecutive days with at least one review, counting back from today.
-  // We fetch all distinct review dates and iterate backwards.
   const result = db.exec('SELECT DISTINCT reviewed_at FROM reviews ORDER BY reviewed_at DESC');
   if (result.length === 0) return 0;
   
@@ -43,7 +55,6 @@ export function streak(db: Database, today: string): number {
       streakCount++;
       expected.setDate(expected.getDate() - 1);
     } else if (diff === 1 && streakCount === 0) {
-      // Today has no review, but yesterday did - start streak from yesterday
       streakCount++;
       expected = new Date(dateStr);
       expected.setDate(expected.getDate() - 1);

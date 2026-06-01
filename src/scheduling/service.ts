@@ -1,5 +1,5 @@
 import { Database } from 'sql.js';
-import { sm2, SM2_DEFAULTS } from '../algorithms/sm2';
+import { leitner, BOX_INTERVALS } from '../algorithms/leitner';
 import {
   insertScheduling,
   getSchedulingForNote,
@@ -14,11 +14,13 @@ export function initializeScheduling(db: Database, noteId: string): void {
   const dueDate = todayISO();
   insertScheduling(db, {
     note_id: noteId,
-    ease_factor: SM2_DEFAULTS.INITIAL_EASE_FACTOR,
+    ease_factor: 0,
     repetitions: 0,
-    interval_days: 0,
+    interval_days: BOX_INTERVALS[1]!,
     due_date: dueDate,
     last_reviewed: null,
+    box: 1,
+    archived: 0,
   });
 }
 
@@ -29,20 +31,20 @@ export function applyReview(
   reviewedAt: string,
 ): SchedulingRow {
   const current = getSchedulingForNote(db, noteId);
-  const prevEase = current?.ease_factor ?? SM2_DEFAULTS.INITIAL_EASE_FACTOR;
-  const prevReps = current?.repetitions ?? 0;
-  const prevInterval = current?.interval_days ?? 0;
+  const currentBox = current?.box ?? 1;
 
-  const result = sm2(quality, prevEase, prevReps, prevInterval);
+  const result = leitner(quality, currentBox);
   const dueDate = addDays(reviewedAt, result.intervalDays);
 
   const updated: SchedulingRow = {
     note_id: noteId,
-    ease_factor: result.easeFactor,
-    repetitions: result.repetitions,
+    ease_factor: 0,
+    repetitions: current?.repetitions ?? 0,
     interval_days: result.intervalDays,
     due_date: dueDate,
     last_reviewed: reviewedAt,
+    box: result.box,
+    archived: result.archived ? 1 : 0,
   };
 
   insertScheduling(db, updated);

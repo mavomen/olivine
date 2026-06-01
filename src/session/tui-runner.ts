@@ -5,7 +5,7 @@ import { createCardBox } from './tui-card';
 import { insertReview } from '../models/review';
 import { applyReview } from '../scheduling/service';
 import { todayISO } from '../utils/date';
-import { streak } from '../stats/calculator';
+import { getSchedulingForNote } from '../models/scheduling';
 
 export function runTuiSession(db: Database, session: ReviewSession): Promise<void> {
   if (!process.stdout.isTTY) {
@@ -19,8 +19,14 @@ export function runTuiSession(db: Database, session: ReviewSession): Promise<voi
     });
 
     const today = todayISO();
-    let currentStreak = streak(db, today);
     let cardBox: ReturnType<typeof createCardBox> | null = null;
+
+    function getCurrentBox(): number {
+      const note = currentNote(session);
+      if (!note) return 1;
+      const sched = getSchedulingForNote(db, note.note.id);
+      return sched?.box ?? 1;
+    }
 
     function renderCard(revealed: boolean = false) {
       const note = currentNote(session);
@@ -28,6 +34,8 @@ export function runTuiSession(db: Database, session: ReviewSession): Promise<voi
         showSummary();
         return;
       }
+
+      const box = getCurrentBox();
 
       if (cardBox) cardBox.detach();
       cardBox = createCardBox(
@@ -38,7 +46,7 @@ export function runTuiSession(db: Database, session: ReviewSession): Promise<voi
           revealed,
           index: session.currentIndex + 1,
           total: session.notes.length,
-          streak: currentStreak,
+          box,
         },
         () => renderCard(true),
         () => renderCard(false),
@@ -46,7 +54,6 @@ export function runTuiSession(db: Database, session: ReviewSession): Promise<voi
           applyQuality(session, quality);
           insertReview(db, note.note.id, quality, today);
           applyReview(db, note.note.id, quality, today);
-          currentStreak = streak(db, today);
           advanceNote(session);
           renderCard(false);
         },
