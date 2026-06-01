@@ -19,6 +19,7 @@ describe('scheduling service', () => {
       word_count: 1,
       created_at: '2025-06-01',
       updated_at: '2025-06-01',
+      tags: '[]',
     };
     insertNote(db, note);
   });

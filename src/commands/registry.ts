@@ -8,6 +8,7 @@ import { buildAddCommand } from './add';
 import { buildConfigCommand } from './config';
 import { buildEditCommand } from './edit';
 import { buildBrowseCommand } from './browse';
+import { buildGrepCommand } from './grep';
 
 export function registerCommands(program: Command): void {
   program.addCommand(buildInitCommand());
@@ -19,4 +20,5 @@ export function registerCommands(program: Command): void {
   program.addCommand(buildConfigCommand());
   program.addCommand(buildEditCommand());
   program.addCommand(buildBrowseCommand());
+  program.addCommand(buildGrepCommand());
 }

@@ -27,7 +27,6 @@ export function buildEditCommand(): Command {
           return;
         }
 
-        // Use inquirer for note selection
         const { default: inquirer } = await import('inquirer');
         const { noteId } = await inquirer.prompt([
           {
@@ -45,7 +44,6 @@ export function buildEditCommand(): Command {
           return;
         }
 
-        // Open TUI with existing values
         const { showAddCardForm } = await import('../session/tui-add');
         const result = await new Promise<{ title: string; content: string } | null>(
           (resolve) => {
@@ -64,7 +62,6 @@ export function buildEditCommand(): Command {
           return;
         }
 
-        // Update the markdown file
         const filePath = path.join(vaultPath, note.path);
         const today = todayISO();
         const frontmatter = [
@@ -79,7 +76,6 @@ export function buildEditCommand(): Command {
 
         await fs.writeFile(filePath, frontmatter, 'utf-8');
 
-        // Update database
         insertNote(db, {
           id: note.id,
           path: note.path,
@@ -88,6 +84,7 @@ export function buildEditCommand(): Command {
           word_count: result.content.split(/\s+/).filter(Boolean).length,
           created_at: note.created_at,
           updated_at: today,
+          tags: note.tags || '[]',
         });
 
         saveDb(vaultPath);

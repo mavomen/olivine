@@ -102,6 +102,7 @@ export function buildAddCommand(): Command {
           word_count: answer.split(/\s+/).filter(Boolean).length,
           created_at: today,
           updated_at: today,
+          tags: '[]',
         };
 
         insertNote(db, note);

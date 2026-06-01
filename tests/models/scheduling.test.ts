@@ -25,6 +25,7 @@ describe('scheduling repository', () => {
       word_count: 2,
       created_at: '2025-01-01',
       updated_at: '2025-01-02',
+      tags: '[]',
     };
     const note2: NoteRow = {
       id: 'def456',
@@ -34,6 +35,7 @@ describe('scheduling repository', () => {
       word_count: 2,
       created_at: '2025-01-01',
       updated_at: '2025-01-02',
+      tags: '[]',
     };
     insertNote(db, note1);
     insertNote(db, note2);

@@ -16,6 +16,7 @@ const makeNote = (id: string): NoteRow => ({
   word_count: 1,
   created_at: '2025-01-01',
   updated_at: '2025-01-01',
+      tags: '[]',
 });
 
 describe('session state', () => {
