@@ -45,11 +45,13 @@ describe('scheduling repository', () => {
 
   const scheduling: SchedulingRow = {
     note_id: 'abc123',
-    ease_factor: 2.5,
-    repetitions: 1,
+    ease_factor: 0,
+    repetitions: 0,
     interval_days: 1,
     due_date: '2025-06-01',
     last_reviewed: null,
+    box: 1,
+    archived: 0,
   };
 
   it('should insert and retrieve scheduling', () => {
@@ -60,21 +62,32 @@ describe('scheduling repository', () => {
 
   it('should replace scheduling on insert', () => {
     insertScheduling(db, scheduling);
-    insertScheduling(db, { ...scheduling, repetitions: 2 });
+    insertScheduling(db, { ...scheduling, box: 2 });
     const row = getSchedulingForNote(db, 'abc123');
-    expect(row!.repetitions).toBe(2);
+    expect(row!.box).toBe(2);
   });
 
-  it('should return all scheduling rows', () => {
+  it('should return all active scheduling rows', () => {
     insertScheduling(db, scheduling);
     insertScheduling(db, { ...scheduling, note_id: 'def456' });
     const all = getAllScheduling(db);
     expect(all).toHaveLength(2);
   });
 
+  it('should exclude archived from getAllScheduling', () => {
+    insertScheduling(db, scheduling);
+    insertScheduling(db, { ...scheduling, note_id: 'def456', archived: 1 });
+    const all = getAllScheduling(db);
+    expect(all).toHaveLength(1);
+  });
+
   it('should find due notes', () => {
     insertScheduling(db, scheduling);
-    insertScheduling(db, { ...scheduling, note_id: 'def456', due_date: '2025-06-03' });
+    insertScheduling(db, {
+      ...scheduling,
+      note_id: 'def456',
+      due_date: '2025-06-03',
+    });
     const due = getDueNotes(db, '2025-06-01', 10);
     expect(due).toHaveLength(1);
     expect(due[0]!.note_id).toBe('abc123');
@@ -82,7 +95,11 @@ describe('scheduling repository', () => {
 
   it('should respect due date ordering', () => {
     insertScheduling(db, scheduling);
-    insertScheduling(db, { ...scheduling, note_id: 'def456', due_date: '2025-05-30' });
+    insertScheduling(db, {
+      ...scheduling,
+      note_id: 'def456',
+      due_date: '2025-05-30',
+    });
     const due = getDueNotes(db, '2025-06-01', 10);
     expect(due).toHaveLength(2);
     expect(due[0]!.note_id).toBe('def456');

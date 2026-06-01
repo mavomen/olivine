@@ -1,12 +1,13 @@
 import { Database } from 'sql.js';
-import { totalNotes, dueNotesCount, reviewedToday, averageEaseFactor, totalReviews, streak } from './calculator';
+import { totalNotes, dueNotesCount, reviewedToday, boxDistribution, archivedCount, totalReviews, streak } from './calculator';
 import { todayISO } from '../utils/date';
 
 export interface StatsSnapshot {
   totalNotes: number;
   dueNotes: number;
   reviewedToday: number;
-  averageEaseFactor: number;
+  boxDistribution: Record<number, number>;
+  archivedCount: number;
   totalReviews: number;
   streak: number;
 }
@@ -17,19 +18,27 @@ export function getStats(db: Database): StatsSnapshot {
     totalNotes: totalNotes(db),
     dueNotes: dueNotesCount(db, today),
     reviewedToday: reviewedToday(db, today),
-    averageEaseFactor: averageEaseFactor(db),
+    boxDistribution: boxDistribution(db),
+    archivedCount: archivedCount(db),
     totalReviews: totalReviews(db),
     streak: streak(db, today),
   };
 }
 
 export function formatStats(stats: StatsSnapshot): string {
+  const boxLines = Object.entries(stats.boxDistribution)
+    .map(([box, count]) => `  Box ${box}: ${count} card(s)`)
+    .join('\n');
+
   return [
     `Total notes:          ${stats.totalNotes}`,
     `Due notes:            ${stats.dueNotes}`,
     `Reviewed today:       ${stats.reviewedToday}`,
-    `Average ease factor:  ${stats.averageEaseFactor}`,
     `Total reviews:        ${stats.totalReviews}`,
     `Current streak:       ${stats.streak} day(s)`,
+    `Archived:             ${stats.archivedCount}`,
+    '',
+    'Box distribution:',
+    boxLines,
   ].join('\n');
 }

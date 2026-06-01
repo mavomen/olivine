@@ -6,7 +6,7 @@ export interface CardState {
   revealed: boolean;
   index: number;
   total: number;
-  streak: number;
+  box: number;
 }
 
 export function createCardBox(
@@ -23,7 +23,7 @@ export function createCardBox(
     width: '80%',
     height: '70%',
     border: 'line',
-    label: ` Card no. ${card.index} of ${card.total} for today (day ${card.streak} of streak) `,
+    label: ` Card no. ${card.index} of ${card.total} — Box ${card.box} `,
     style: {
       border: { fg: 'cyan' },
       focus: { border: { fg: 'green' } },
@@ -33,7 +33,6 @@ export function createCardBox(
     scrollable: false,
   });
 
-  // Main content area
   blessed.box({
     parent: box,
     top: 1,
@@ -52,7 +51,6 @@ export function createCardBox(
     vi: true,
   });
 
-  // Footer with instructions
   blessed.box({
     parent: box,
     bottom: 0,
@@ -70,7 +68,6 @@ export function createCardBox(
     padding: { left: 2, right: 2 },
   });
 
-  // Key bindings
   box.key(['space'], () => {
     if (!card.revealed) {
       onReveal();
