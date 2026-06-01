@@ -40,13 +40,12 @@ export function runTuiSession(db: Database, session: ReviewSession): Promise<voi
           total: session.notes.length,
           streak: currentStreak,
         },
-        () => renderCard(true), // reveal
-        () => renderCard(false), // unreveal
+        () => renderCard(true),
+        () => renderCard(false),
         (quality) => {
           applyQuality(session, quality);
           insertReview(db, note.note.id, quality, today);
           applyReview(db, note.note.id, quality, today);
-          // Update streak after each review
           currentStreak = streak(db, today);
           advanceNote(session);
           renderCard(false);
@@ -69,7 +68,7 @@ export function runTuiSession(db: Database, session: ReviewSession): Promise<voi
         top: 'center',
         left: 'center',
         width: '50%',
-        height: 10,
+        height: 12,
         border: 'line',
         style: { border: { fg: 'green' } },
         content: [
@@ -78,6 +77,8 @@ export function runTuiSession(db: Database, session: ReviewSession): Promise<voi
           ` Reviewed: ${stats.reviewed}/${stats.total}`,
           ` Failed:   ${stats.failed}`,
           ` Duration: ${minutes}m ${seconds}s`,
+          '',
+          ' All caught up!',
           '',
           ' Press q to exit',
         ].join('\n'),
@@ -106,6 +107,7 @@ export function runTuiSession(db: Database, session: ReviewSession): Promise<voi
 async function runFallback(db: Database, session: ReviewSession): Promise<void> {
   const today = todayISO();
   for (const sn of session.notes) {
+    if (sn.reviewed) continue;
     insertReview(db, sn.note.id, 4, today);
     applyReview(db, sn.note.id, 4, today);
     sn.quality = 4;

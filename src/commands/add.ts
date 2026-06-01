@@ -19,62 +19,87 @@ function slugify(title: string): string {
     .slice(0, 64);
 }
 
+async function createCardFile(
+  vaultPath: string,
+  cardsDir: string,
+  question: string,
+  answer: string,
+): Promise<{ relativePath: string; filePath: string }> {
+  const fileDir = cardsDir ? path.join(vaultPath, cardsDir) : vaultPath;
+  await fs.mkdir(fileDir, { recursive: true });
+  const slug = slugify(question) || 'untitled';
+  const fileName = `${slug}.md`;
+  const filePath = path.join(fileDir, fileName);
+
+  const today = todayISO();
+  const frontmatter = [
+    '---',
+    `title: ${question}`,
+    `created: ${today}`,
+    '---',
+    '',
+    answer,
+  ].join('\n');
+
+  await fs.writeFile(filePath, frontmatter, 'utf-8');
+
+  const relativePath = cardsDir ? path.join(cardsDir, fileName) : fileName;
+  return { relativePath, filePath };
+}
+
 export function buildAddCommand(): Command {
   return new Command('add')
     .description('Create a new card')
     .argument('<vaultPath>', 'Path to the Obsidian vault')
-    .action(async (vaultPath: string) => {
+    .option('--title <title>', 'Card question (non-interactive mode)')
+    .option('--content <content>', 'Card answer (non-interactive mode)')
+    .action(async (vaultPath: string, options: { title?: string; content?: string }) => {
       try {
         await validateVaultPath(vaultPath);
         const config = await loadConfig(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
 
-        const result = await new Promise<{ title: string; content: string } | null>(
-          (resolve) => {
-            showAddCardForm(
-              (card) => resolve(card),
-              () => resolve(null),
-            );
-          },
-        );
+        let question: string;
+        let answer: string;
 
-        if (!result) {
-          closeDb();
-          return;
+        if (options.title && options.content) {
+          question = options.title;
+          answer = options.content;
+        } else if (process.stdout.isTTY) {
+          const result = await new Promise<{ title: string; content: string } | null>(
+            (resolve) => {
+              showAddCardForm(
+                config.cardsDir || 'vault root',
+                (card) => resolve(card),
+                () => resolve(null),
+              );
+            },
+          );
+          if (!result) {
+            closeDb();
+            return;
+          }
+          question = result.title;
+          answer = result.content;
+        } else {
+          throw new Error('Non-interactive mode requires --title and --content');
         }
 
-        const fileDir = config.cardsDir
-          ? path.join(vaultPath, config.cardsDir)
-          : vaultPath;
-        await fs.mkdir(fileDir, { recursive: true });
-
-        const slug = slugify(result.title) || 'untitled';
-        const fileName = `${slug}.md`;
-        const filePath = path.join(fileDir, fileName);
+        const { relativePath, filePath } = await createCardFile(
+          vaultPath,
+          config.cardsDir,
+          question,
+          answer,
+        );
 
         const today = todayISO();
-        const frontmatter = [
-          '---',
-          `title: ${result.title}`,
-          `created: ${today}`,
-          '---',
-          '',
-          result.content,
-        ].join('\n');
-
-        await fs.writeFile(filePath, frontmatter, 'utf-8');
-
-        const relativePath = config.cardsDir
-          ? path.join(config.cardsDir, fileName)
-          : fileName;
-
         const note = {
           id: relativePath,
           path: relativePath,
-          title: result.title,
-          content: result.content,
-          word_count: result.content.split(/\s+/).filter(Boolean).length,
+          title: question,
+          content: answer,
+          word_count: answer.split(/\s+/).filter(Boolean).length,
           created_at: today,
           updated_at: today,
         };

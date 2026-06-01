@@ -46,6 +46,7 @@ export function advanceNote(session: ReviewSession): boolean {
     return true;
   }
   session.phase = 'summary';
+  session.currentIndex = session.notes.length; // push past end so currentNote returns null
   return false;
 }
 

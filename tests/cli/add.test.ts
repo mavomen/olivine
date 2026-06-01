@@ -21,15 +21,36 @@ describe('add command', () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('should create a markdown file and sync to database', async () => {
-    // Run add command with piped input (non-interactive fallback)
-    // Since TUI won't work in CI, we'll test the command doesn't crash
-    const output = execSync(`${CLI} add "${tmpDir}"`, {
-      encoding: 'utf-8',
+  it('should create a card with --title (question) and --content (answer) flags', () => {
+    const output = execSync(
+      `${CLI} add "${tmpDir}" --title "What is a monad?" --content "A monoid in the category of endofunctors."`,
+      { encoding: 'utf-8', stdio: 'pipe' },
+    );
+    expect(output).toContain('Card created:');
+    expect(output).toContain('what-is-a-monad.md');
+  });
+
+  it('should fail without title and content in non-TTY', () => {
+    expect(() =>
+      execSync(`${CLI} add "${tmpDir}"`, { encoding: 'utf-8', stdio: 'pipe' }),
+    ).toThrow();
+  });
+
+  it('should create a markdown file with question as title', async () => {
+    execSync(`${CLI} add "${tmpDir}" --title "Test Question" --content "Answer body."`, {
       stdio: 'pipe',
-      timeout: 5000,
     });
-    // In non-TTY, should not throw and produce some output
-    expect(output).toBeDefined();
+    const filePath = path.join(tmpDir, 'test-question.md');
+    const fileExists = await fs.stat(filePath).then(() => true).catch(() => false);
+    expect(fileExists).toBe(true);
+    const content = await fs.readFile(filePath, 'utf-8');
+    expect(content).toContain('title: Test Question');
+    expect(content).toContain('Answer body.');
+  });
+
+  it('should sync new card to database', async () => {
+    execSync(`${CLI} add "${tmpDir}" --title "DB Test" --content "Content."`, { stdio: 'pipe' });
+    const output = execSync(`${CLI} due "${tmpDir}"`, { encoding: 'utf-8' });
+    expect(output).toContain('1 note(s) due');
   });
 });
