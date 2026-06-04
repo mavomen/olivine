@@ -7,14 +7,18 @@ import { applyReview } from '../scheduling/service';
 import { todayISO } from '../utils/date';
 import { getSchedulingForNote } from '../models/scheduling';
 
-export function runTuiSession(db: Database, session: ReviewSession): Promise<void> {
+export interface TuiOptions {
+  dryRun?: boolean;
+}
+
+export function runTuiSession(db: Database, session: ReviewSession, options: TuiOptions = {}): Promise<void> {
   if (!process.stdout.isTTY) {
-    return runFallback(db, session);
+    return runFallback(db, session, options);
   }
   return new Promise((resolve) => {
     const screen = blessed.screen({
       smartCSR: true,
-      title: 'Olivine Review',
+      title: options.dryRun ? 'Olivine — Practice' : 'Olivine — Review',
       dockBorders: false,
     });
 
@@ -52,8 +56,10 @@ export function runTuiSession(db: Database, session: ReviewSession): Promise<voi
         () => renderCard(false),
         (quality) => {
           applyQuality(session, quality);
-          insertReview(db, note.note.id, quality, today);
-          applyReview(db, note.note.id, quality, today);
+          if (!options.dryRun) {
+            insertReview(db, note.note.id, quality, today);
+            applyReview(db, note.note.id, quality, today);
+          }
           advanceNote(session);
           renderCard(false);
         },
@@ -70,6 +76,8 @@ export function runTuiSession(db: Database, session: ReviewSession): Promise<voi
       const minutes = Math.floor(duration / 60000);
       const seconds = Math.floor((duration % 60000) / 1000);
 
+      const label = options.dryRun ? ' Practice Complete' : ' Session Complete';
+
       const msg = blessed.box({
         parent: screen,
         top: 'center',
@@ -79,11 +87,12 @@ export function runTuiSession(db: Database, session: ReviewSession): Promise<voi
         border: 'line',
         style: { border: { fg: 'green' } },
         content: [
-          ' Session Complete',
+          label,
           ' ────────────────',
           ` Reviewed: ${stats.reviewed}/${stats.total}`,
           ` Failed:   ${stats.failed}`,
           ` Duration: ${minutes}m ${seconds}s`,
+          options.dryRun ? ' (practice — no changes saved)' : '',
           '',
           ' All caught up!',
           '',
@@ -111,12 +120,14 @@ export function runTuiSession(db: Database, session: ReviewSession): Promise<voi
   });
 }
 
-async function runFallback(db: Database, session: ReviewSession): Promise<void> {
+async function runFallback(db: Database, session: ReviewSession, options: TuiOptions = {}): Promise<void> {
   const today = todayISO();
   for (const sn of session.notes) {
     if (sn.reviewed) continue;
-    insertReview(db, sn.note.id, 4, today);
-    applyReview(db, sn.note.id, 4, today);
+    if (!options.dryRun) {
+      insertReview(db, sn.note.id, 4, today);
+      applyReview(db, sn.note.id, 4, today);
+    }
     sn.quality = 4;
     sn.reviewed = true;
     session.currentIndex++;

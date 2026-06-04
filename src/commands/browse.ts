@@ -14,11 +14,18 @@ export function buildBrowseCommand(): Command {
     .argument('<vaultPath>', 'Path to the Obsidian vault')
     .option('--all', 'Include archived cards')
     .option('--tag <tag>', 'Filter by tag')
-    .action(async (vaultPath: string, options: { all?: boolean; tag?: string }) => {
+    .option('--tui', 'Open full‑screen TUI browser')
+    .action(async (vaultPath: string, options: { all?: boolean; tag?: string; tui?: boolean }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
+
+        if (options.tui) {
+          const { openBrowseTui } = await import('./browse-tui');
+          openBrowseTui(vaultPath, db);
+          return;
+        }
 
         const allNotes = options.tag ? getNotesByTag(db, options.tag) : getAllNotes(db);
         const scheduling = getAllScheduling(db);
@@ -54,20 +61,11 @@ export function buildBrowseCommand(): Command {
             return { name: label, value: n.id };
           });
 
-          const { selected } = await inquirer.prompt([
-            {
-              type: 'list',
-              name: 'selected',
-              message: 'Cards (type to filter):',
-              choices: [
-                ...choices,
-                new inquirer.Separator(),
-                { name: chalk.gray('─── Quit ───'), value: '__quit__' },
-              ],
-              pageSize: 15,
-              loop: false,
-            },
-          ]);
+          const { selected } = await inquirer.prompt([{
+            type: 'list', name: 'selected', message: 'Cards (type to filter):',
+            choices: [...choices, new inquirer.Separator(), { name: chalk.gray('─── Quit ───'), value: '__quit__' }],
+            pageSize: 15, loop: false,
+          }]);
 
           if (selected === '__quit__') break;
 
@@ -76,52 +74,37 @@ export function buildBrowseCommand(): Command {
 
           let viewing = true;
           while (viewing) {
-            const isArchived = archivedIds.has(note.id);
-            const box = schedMap.get(note.id)?.box;
             console.log(chalk.bold.yellow('\n' + '═'.repeat(60)));
-            if (isArchived) console.log(chalk.bold.gray('  [ARCHIVED]'));
-            else if (box) console.log(chalk.bold.cyan(`  [Box ${box}]`));
-            if (note.tags && note.tags !== '[]') {
-              console.log(chalk.dim('  Tags: ' + JSON.parse(note.tags).join(', ')));
-            }
+            if (note.tags && note.tags !== '[]') console.log(chalk.dim('  Tags: ' + JSON.parse(note.tags).join(', ')));
             console.log(chalk.bold.yellow('  QUESTION:'));
             console.log(chalk.white('  ' + note.title));
             console.log(chalk.bold.yellow('  ANSWER:'));
             note.content.split('\n').forEach((line) => console.log(chalk.white('  ' + line)));
             console.log(chalk.bold.yellow('═'.repeat(60) + '\n'));
 
-            const { action } = await inquirer.prompt([
-              {
-                type: 'list',
-                name: 'action',
-                message: 'What next?',
-                choices: [
-                  { name: 'Back to list', value: 'back' },
-                  { name: 'View history', value: 'history' },
-                  { name: 'Quit', value: 'quit' },
-                ],
-              },
-            ]);
+            const { action } = await inquirer.prompt([{
+              type: 'list', name: 'action', message: 'What next?',
+              choices: [
+                { name: 'Back to list', value: 'back' },
+                { name: 'View history', value: 'history' },
+                { name: 'Quit', value: 'quit' },
+              ],
+            }]);
 
             if (action === 'back') viewing = false;
             else if (action === 'quit') { viewing = false; browsing = false; }
             else if (action === 'history') {
               const reviews = getReviewsForNote(db, note.id);
               console.log(chalk.bold.magenta('\n  REVIEW HISTORY:'));
-              if (reviews.length === 0) {
-                console.log(chalk.gray('  No reviews yet.'));
-              } else {
+              if (reviews.length === 0) console.log(chalk.gray('  No reviews yet.'));
+              else {
                 for (const r of reviews) {
                   const qualityColor = r.quality >= 3 ? 'green' : 'red';
-                  const date = r.reviewed_at;
-                  console.log(chalk`    {bold ${date}}  quality: {${qualityColor} ${r.quality}}`);
+                  console.log(chalk`    {bold ${r.reviewed_at}}  quality: {${qualityColor} ${r.quality}}`);
                 }
               }
               console.log();
-              // Wait for any key before returning to card view
-              await inquirer.prompt([
-                { type: 'input', name: 'dummy', message: 'Press Enter to continue' },
-              ]);
+              await inquirer.prompt([{ type: 'input', name: 'dummy', message: 'Press Enter to continue' }]);
             }
           }
         }
