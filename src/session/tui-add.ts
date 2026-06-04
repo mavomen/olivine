@@ -238,21 +238,6 @@ export function showAddCardForm(
       footer.style.bg = mode === 'INSERT' ? 'blue' : 'green';
     }
 
-    function resetFields() {
-      questionBuf = '';
-      answerBuf = '';
-      tagsBuf = '';
-      qCursor = 0;
-      aCursor = 0;
-      tCursor = 0;
-      aScrollOffset = 0;
-      focused = 'question';
-      questionBox.style.border = { fg: 'yellow' };
-      answerBox.style.border = { fg: 'grey' };
-      tagsBox.style.border = { fg: 'grey' };
-      undoStack = [];
-      renderAll();
-    }
 
     function renderAll() {
       renderQuestion();
