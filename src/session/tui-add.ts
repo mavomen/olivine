@@ -449,11 +449,16 @@ export function showAddCardForm(
           }, 1500);
           return;
         }
-        onSave({ title: questionBuf.trim(), content: answerBuf.trim(), tags: tagsBuf.trim() });
-        if (initialTitle) {
-          screen.destroy();
-          resolve();
-        } else resetFields();
+        // Destroy the screen BEFORE calling onSave, always.
+        // The old "resetFields()" path kept the add-form screen alive after
+        // saving, so when onSave reopened the browse TUI a second blessed
+        // screen came up while this one was still running. Both screens then
+        // competed for stdin — every j/k in browse also hit the add form
+        // (which was in INSERT mode) and got inserted as literal characters.
+        const result = { title: questionBuf.trim(), content: answerBuf.trim(), tags: tagsBuf.trim() };
+        screen.destroy();
+        resolve();
+        onSave(result);
         return;
       }
 
