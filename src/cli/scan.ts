@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { getDb, saveDb, closeDb } from '../database/connection';
 import { bootstrapDatabase } from '../database/bootstrap';
-import { syncVault } from '../sync/service';
+import { syncVault } from '../vault/sync';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 

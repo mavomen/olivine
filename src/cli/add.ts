@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import type { AddCardResult } from '../tui/card-form';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { getDb, saveDb, closeDb } from '../database/connection';
@@ -72,12 +73,12 @@ export function buildAddCommand(): Command {
           answer = options.content;
           tags = options.tags ? options.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
         } else if (process.stdout.isTTY) {
-          const { showAddCardForm } = await import('../session/tui-add');
+          const { showAddCardForm } = await import('../tui/card-form');
           const result = await new Promise<{ title: string; content: string; tags: string } | null>(
             (resolve) => {
               showAddCardForm(
                 config.cardsDir || 'vault root',
-                (card) => resolve(card),
+                (card: AddCardResult) => resolve(card),
                 () => resolve(null),
               );
             },

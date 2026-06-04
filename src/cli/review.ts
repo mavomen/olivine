@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { getDb, saveDb, closeDb } from '../database/connection';
 import { bootstrapDatabase } from '../database/bootstrap';
-import { loadDueSession } from '../session/loader';
+import { loadDueSession } from '../review/loader';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 import { getStats, formatStats } from '../stats/formatter';
@@ -28,10 +28,10 @@ export function buildReviewCommand(): Command {
         }
 
         if (options.tui) {
-          const { runTuiSession } = await import('../session/tui-runner');
+          const { runTuiSession } = await import('../tui/review/runner');
           await runTuiSession(db, session);
         } else {
-          const { runReviewSession } = await import('../session/runner');
+          const { runReviewSession } = await import('../review/runner');
           await runReviewSession(db, session);
         }
 

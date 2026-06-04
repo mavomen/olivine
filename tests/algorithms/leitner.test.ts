@@ -1,4 +1,4 @@
-import { leitner, MAX_BOX } from '../../src/algorithms/leitner';
+import { leitner, MAX_BOX } from '../../src/scheduling/algorithms/leitner';
 
 describe('Leitner Box algorithm', () => {
   it('should start at Box 1 for a new card', () => {

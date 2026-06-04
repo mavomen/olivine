@@ -4,8 +4,8 @@ import { insertNote } from '../../src/models/note';
 import { initializeScheduling, applyReview } from '../../src/scheduling/service';
 import { getSchedulingForNote } from '../../src/models/scheduling';
 import { getReviewsForNote } from '../../src/models/review';
-import { loadDueSession } from '../../src/session/loader';
-import { applyQuality, advanceNote } from '../../src/session/state';
+import { loadDueSession } from '../../src/review/loader';
+import { applyQuality, advanceNote } from '../../src/review/session';
 import { insertReview } from '../../src/models/review';
 import type { NoteRow } from '../../src/models/note';
 

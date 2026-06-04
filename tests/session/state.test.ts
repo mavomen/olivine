@@ -5,7 +5,7 @@ import {
   advanceNote,
   sessionStats,
   sessionDuration,
-} from '../../src/session/state';
+} from '../../src/review/session';
 import type { NoteRow } from '../../src/models/note';
 
 const makeNote = (id: string): NoteRow => ({

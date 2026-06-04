@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import initSqlJs from 'sql.js';
 import { bootstrapDatabase } from '../../src/database/bootstrap';
-import { syncVault } from '../../src/sync/service';
+import { syncVault } from '../../src/vault/sync';
 import { getAllNotes, getNoteByPath } from '../../src/models/note';
 import { ensureOlivineDir } from '../../src/config/initializer';
 

@@ -2,7 +2,7 @@ import { createMemoryDb } from '../test-utils';
 import { bootstrapDatabase } from '../../src/database/bootstrap';
 import { insertNote } from '../../src/models/note';
 import { initializeScheduling } from '../../src/scheduling/service';
-import { loadDueSession } from '../../src/session/loader';
+import { loadDueSession } from '../../src/review/loader';
 import type { NoteRow } from '../../src/models/note';
 
 describe('session loader', () => {
