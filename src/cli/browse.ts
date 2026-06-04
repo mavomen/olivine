@@ -22,7 +22,7 @@ export function buildBrowseCommand(): Command {
         bootstrapDatabase(db);
 
         if (options.tui) {
-          const { openBrowseTui } = await import('./browse-tui');
+          const { openBrowseTui } = await import('../tui/browse');
           openBrowseTui(vaultPath, db);
           return;
         }

@@ -42,7 +42,7 @@ export function buildEditCommand(): Command {
           catch { return ''; }
         })();
 
-        const { showAddCardForm } = await import('../session/tui-add');
+        const { showAddCardForm } = await import('../tui/card-form');
         const result = await new Promise<{ title: string; content: string; tags: string } | null>(resolve => {
           showAddCardForm(
             config.cardsDir || 'vault root',

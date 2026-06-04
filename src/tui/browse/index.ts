@@ -1,10 +1,10 @@
 import blessed from 'blessed';
 import { Database } from 'sql.js';
-import { getAllNotes, NoteRow } from '../models/note';
-import { getAllScheduling, SchedulingRow } from '../models/scheduling';
-import { getReviewsForNote } from '../models/review';
-import { createVirtualList, VirtualListRow } from '../tui/virtual-list';
-import { AddCardResult } from '../session/tui-add';
+import { getAllNotes, NoteRow } from '../../models/note';
+import { getAllScheduling, SchedulingRow } from '../../models/scheduling';
+import { getReviewsForNote } from '../../models/review';
+import { createVirtualList, VirtualListRow } from './virtual-list';
+import { AddCardResult } from '../card-form';
 import chalk from 'chalk';
 
 interface BrowseState {

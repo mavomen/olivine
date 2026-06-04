@@ -1,7 +1,7 @@
 import { Database } from 'sql.js';
 import { getDueNotes, getDueNotesByTag } from '../models/scheduling';
 import { getNoteById } from '../models/note';
-import { createSession, type ReviewSession } from './state';
+import { createSession, type ReviewSession } from './session';
 import { logger } from '../utils/logger';
 import { todayISO } from '../utils/date';
 

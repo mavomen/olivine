@@ -1,5 +1,5 @@
 import { Database } from 'sql.js';
-import { leitner, BOX_INTERVALS } from '../algorithms/leitner';
+import { leitner, BOX_INTERVALS } from './algorithms/leitner';
 import {
   insertScheduling,
   getSchedulingForNote,

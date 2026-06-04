@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { createMemoryDb } from '../test-utils';
 import { bootstrapDatabase } from '../../src/database/bootstrap';
-import { syncVault } from '../../src/sync/service';
+import { syncVault } from '../../src/vault/sync';
 import { getAllNotes } from '../../src/models/note';
 
 describe('sync service', () => {
