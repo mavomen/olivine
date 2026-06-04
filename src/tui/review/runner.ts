@@ -1,11 +1,11 @@
 import blessed from 'blessed';
 import { Database } from 'sql.js';
-import { ReviewSession, currentNote, applyQuality, advanceNote, sessionStats, sessionDuration } from './state';
-import { createCardBox } from './tui-card';
-import { insertReview } from '../models/review';
-import { applyReview } from '../scheduling/service';
-import { todayISO } from '../utils/date';
-import { getSchedulingForNote } from '../models/scheduling';
+import { ReviewSession, currentNote, applyQuality, advanceNote, sessionStats, sessionDuration } from '../../review/session';
+import { createCardBox } from './card';
+import { insertReview } from '../../models/review';
+import { applyReview } from '../../scheduling/service';
+import { todayISO } from '../../utils/date';
+import { getSchedulingForNote } from '../../models/scheduling';
 
 export interface TuiOptions {
   dryRun?: boolean;

@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { Database } from 'sql.js';
-import { ReviewSession, currentNote, applyQuality, advanceNote, sessionDuration, sessionStats } from './state';
+import { ReviewSession, currentNote, applyQuality, advanceNote, sessionDuration, sessionStats } from './session';
 import { promptReveal, promptQuality } from './prompter';
 import { insertReview } from '../models/review';
 import { applyReview } from '../scheduling/service';

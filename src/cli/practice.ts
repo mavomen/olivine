@@ -1,11 +1,11 @@
 import { Command } from 'commander';
 import { getDb, closeDb } from '../database/connection';
 import { bootstrapDatabase } from '../database/bootstrap';
-import { loadDueSession } from '../session/loader';
+import { loadDueSession } from '../review/loader';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 import { getStats, formatStats } from '../stats/formatter';
-import { runTuiSession } from '../session/tui-runner';
+import { runTuiSession } from '../tui/review/runner';
 
 export function buildPracticeCommand(): Command {
   return new Command('practice')
