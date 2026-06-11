@@ -17,13 +17,15 @@ export function buildReviewCommand(): Command {
     .option('--algo <algorithm>', `Algorithm override (${listAlgorithms().join(', ')})`)
     .option('--shuffle', 'Randomize card order')
     .option('--limit <n>', 'Maximum number of cards to review')
-    .action(async (vaultPath: string, options: { tui?: boolean; tag?: string; algo?: string; shuffle?: boolean; limit?: string }) => {
+    .option('--quality <n>', 'Fixed quality rating (0-5) for non-interactive review')
+    .action(async (vaultPath: string, options: { tui?: boolean; tag?: string; algo?: string; shuffle?: boolean; limit?: string; quality?: string }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
 
         const limit = options.limit ? parseInt(options.limit, 10) : undefined;
+        const qualityOverride = options.quality ? parseInt(options.quality, 10) : undefined;
         const session = loadDueSession(db, options.tag, limit);
         if (session && options.shuffle) shuffleSession(session);
         if (!session) {
@@ -36,10 +38,10 @@ export function buildReviewCommand(): Command {
 
         if (options.tui) {
           const { runTuiSession } = await import('../tui/review/runner');
-          await runTuiSession(db, session, { algorithmOverride: options.algo });
+          await runTuiSession(db, session, { algorithmOverride: options.algo, quality: qualityOverride });
         } else {
           const { runReviewSession } = await import('../review/runner');
-          await runReviewSession(db, session, options.algo);
+          await runReviewSession(db, session, options.algo, qualityOverride);
         }
 
         saveDb(vaultPath);

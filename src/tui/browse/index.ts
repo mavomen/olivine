@@ -19,6 +19,9 @@ interface BrowseState {
 }
 
 export function openBrowseTui(vaultPath: string, db: Database): void {
+  if (!process.stdout.isTTY) {
+    throw new Error('TUI browser requires a TTY.');
+  }
   // Clear any leftover terminal content from the previous screen before blessed's
   // smartCSR (differential renderer) takes over — otherwise old chars bleed through.
   process.stdout.write('\x1b[2J\x1b[0;0H');

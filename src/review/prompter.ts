@@ -11,6 +11,9 @@ export async function promptReveal(title: string): Promise<void> {
 }
 
 export async function promptQuality(): Promise<number> {
+  if (!process.stdout.isTTY) {
+    throw new Error('Interactive prompt requires a TTY. Use --quality <n> to specify a rating non-interactively.');
+  }
   const { quality } = await inquirer.prompt([
     {
       type: 'list',

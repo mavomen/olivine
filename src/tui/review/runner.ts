@@ -10,6 +10,7 @@ import { getSchedulingForNote } from '../../models/scheduling';
 export interface TuiOptions {
   dryRun?: boolean;
   algorithmOverride?: string;
+  quality?: number;
 }
 
 export function runTuiSession(db: Database, session: ReviewSession, options: TuiOptions = {}): Promise<void> {
@@ -182,13 +183,14 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
 
 async function runFallback(db: Database, session: ReviewSession, options: TuiOptions = {}): Promise<void> {
   const today = todayISO();
+  const q = options.quality ?? 4;
   for (const sn of session.notes) {
     if (sn.reviewed) continue;
     if (!options.dryRun) {
-      insertReview(db, sn.note.id, 4, today);
-      applyReview(db, sn.note.id, 4, today, options.algorithmOverride);
+      insertReview(db, sn.note.id, q, today);
+      applyReview(db, sn.note.id, q, today, options.algorithmOverride);
     }
-    sn.quality = 4;
+    sn.quality = q;
     sn.reviewed = true;
     session.currentIndex++;
   }
