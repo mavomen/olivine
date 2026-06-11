@@ -105,6 +105,36 @@ describe('edit command', () => {
     expect(tags).toContain('bar');
   });
 
+  it('should error on --id without --content in non-TTY mode', async () => {
+    await fs.writeFile(path.join(tmpDir, 'partial.md'), '# Partial');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const noteId = execSync(
+      `sqlite3 "${tmpDir}/.olivine/olivine.db" "SELECT id FROM notes LIMIT 1"`,
+      { encoding: 'utf-8' },
+    ).trim();
+
+    expect(() => execSync(
+      `${CLI} edit "${tmpDir}" --id "${noteId}" --title "Only Title"`,
+      { encoding: 'utf-8', stdio: 'pipe' },
+    )).toThrow();
+  });
+
+  it('should error on --id without --title in non-TTY mode', async () => {
+    await fs.writeFile(path.join(tmpDir, 'partial.md'), '# Partial');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const noteId = execSync(
+      `sqlite3 "${tmpDir}/.olivine/olivine.db" "SELECT id FROM notes LIMIT 1"`,
+      { encoding: 'utf-8' },
+    ).trim();
+
+    expect(() => execSync(
+      `${CLI} edit "${tmpDir}" --id "${noteId}" --content "Some content"`,
+      { encoding: 'utf-8', stdio: 'pipe' },
+    )).toThrow();
+  });
+
   it('should error on non-TTY edit without --title or --content', async () => {
     await fs.writeFile(path.join(tmpDir, 'partial.md'), '# Partial');
     execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });

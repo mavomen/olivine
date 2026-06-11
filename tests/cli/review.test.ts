@@ -92,6 +92,17 @@ describe('review command', () => {
     expect(output).toContain('Reviewed: 1/1');
   });
 
+  it('should error with --quality value out of range', async () => {
+    await fs.writeFile(path.join(tmpDir, 'quality-note.md'), '# Quality Note');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    expect(() => execSync(`${CLI} review "${tmpDir}" --quality 6`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+      timeout: 5000,
+    })).toThrow();
+  });
+
   it('should use --quality with --tui in non-interactive mode', async () => {
     await fs.writeFile(path.join(tmpDir, 'tui-quality.md'), '# TUI Quality');
     execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
