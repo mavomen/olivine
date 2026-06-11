@@ -36,11 +36,18 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
     let cardBox: ReturnType<typeof createCardBox> | null = null;
     let flashing = false;
 
-    function getCurrentBox(): number {
+    function getCurrentSched() {
       const note = currentNote(session);
-      if (!note) return 1;
-      const sched = getSchedulingForNote(db, note.note.id);
-      return sched?.box ?? 1;
+      if (!note) return undefined;
+      return getSchedulingForNote(db, note.note.id);
+    }
+
+    function getCurrentBox(): number {
+      return getCurrentSched()?.box ?? 1;
+    }
+
+    function getCurrentAlgorithm(): string {
+      return getCurrentSched()?.algorithm ?? options.algorithmOverride ?? 'leitner';
     }
 
     function renderCard(revealed: boolean = false) {
@@ -51,6 +58,7 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
       }
 
       const box = getCurrentBox();
+      const algorithm = getCurrentAlgorithm();
 
       if (cardBox) cardBox.detach();
       cardBox = createCardBox(
@@ -63,6 +71,7 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
           total: session.notes.length,
           remaining: session.notes.length - (session.currentIndex + 1),
           box,
+          algorithm,
         },
         () => renderCard(true),
         () => renderCard(false),
