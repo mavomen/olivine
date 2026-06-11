@@ -10,6 +10,7 @@ export async function runReviewSession(
   db: Database,
   session: ReviewSession,
   algorithmOverride?: string,
+  qualityOverride?: number,
 ): Promise<void> {
   const today = todayISO();
   console.log(chalk.bold(`\nStarting review session — ${session.notes.length} notes due\n`));
@@ -21,12 +22,14 @@ export async function runReviewSession(
     const progress = `[${session.currentIndex + 1}/${session.notes.length}]`;
     console.log(chalk.cyan(`${progress} ${chalk.white(sn.note.title)}`));
 
-    await promptReveal(sn.note.title);
-    console.log(chalk.gray('\n--- Content ---'));
-    console.log(sn.note.content);
-    console.log(chalk.gray('----------------\n'));
+    if (qualityOverride === undefined) {
+      await promptReveal(sn.note.title);
+      console.log(chalk.gray('\n--- Content ---'));
+      console.log(sn.note.content);
+      console.log(chalk.gray('----------------\n'));
+    }
 
-    const quality = await promptQuality();
+    const quality = qualityOverride ?? await promptQuality();
     applyQuality(session, quality);
 
     insertReview(db, sn.note.id, quality, today);

@@ -6,7 +6,7 @@ import { bootstrapDatabase } from '../database/bootstrap';
 import { loadConfig } from '../config/loader';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
-import { getAllNotes, insertNote } from '../models/note';
+import { getAllNotes, getNoteById, insertNote } from '../models/note';
 import { todayISO } from '../utils/date';
 
 export function buildEditCommand(): Command {
@@ -14,7 +14,10 @@ export function buildEditCommand(): Command {
     .description('Edit an existing card')
     .argument('<vaultPath>', 'Path to the Obsidian vault')
     .option('--id <noteId>', 'Edit a specific card by ID')
-    .action(async (vaultPath: string, options: { id?: string }) => {
+    .option('--title <title>', 'New title (non-interactive)')
+    .option('--content <content>', 'New content (non-interactive)')
+    .option('--tags <tags>', 'Comma-separated tags (non-interactive)')
+    .action(async (vaultPath: string, options: { id?: string; title?: string; content?: string; tags?: string }) => {
       try {
         await validateVaultPath(vaultPath);
         const config = await loadConfig(vaultPath);
@@ -30,31 +33,66 @@ export function buildEditCommand(): Command {
 
         const isTty = !!process.stdout.isTTY;
 
-        let noteId: string | undefined;
+        if (!options.id && !isTty) {
+          throw new Error('Interactive mode requires a TTY. Use --id <noteId> to specify a card.');
+        }
 
-        if (options.id) {
-          noteId = options.id;
-          const found = notes.find(n => n.id === noteId);
-          if (!found) {
-            throw new Error(`Card not found: ${noteId}`);
-          }
-          if (!isTty) {
-            throw new Error('Card editor requires a TTY. Use a TTY session to edit cards.');
-          }
-        } else if (isTty) {
+        if (!options.id && isTty) {
           const { default: inquirer } = await import('inquirer');
           const { selected } = await inquirer.prompt([{
             type: 'list', name: 'selected', message: 'Select a card to edit:',
             choices: notes.map(n => ({ name: n.title, value: n.id })),
             pageSize: 15,
           }]);
-          noteId = selected;
-        } else {
-          throw new Error('Interactive mode requires a TTY. Use --id <noteId> to specify a card.');
+          options.id = selected;
         }
 
-        const note = notes.find(n => n.id === noteId);
-        if (!note) { closeDb(); throw new Error(`Card not found: ${noteId}`); }
+        if (!options.id) throw new Error('No card selected.');
+
+        const note = getNoteById(db, options.id);
+        if (!note) throw new Error(`Card not found: ${options.id}`);
+
+        if (!isTty) {
+          if (!options.title || !options.content) {
+            throw new Error('Non-interactive edit requires --title and --content (and optionally --tags).');
+          }
+
+          const tagsArr = options.tags
+            ? options.tags.split(',').map(t => t.trim()).filter(Boolean)
+            : (() => { try { return JSON.parse(note.tags || '[]'); } catch { return []; } })();
+
+          const filePath = path.join(vaultPath, note.path);
+          const today = todayISO();
+          const tagsLine = tagsArr.length > 0 ? `tags: [${tagsArr.join(', ')}]\n` : '';
+          const frontmatter = [
+            '---',
+            `title: ${options.title}`,
+            `created: ${note.created_at}`,
+            `updated: ${today}`,
+            tagsLine,
+            '---',
+            '',
+            options.content,
+          ].filter(Boolean).join('\n');
+
+          await fs.writeFile(filePath, frontmatter, 'utf-8');
+
+          insertNote(db, {
+            id: note.id,
+            path: note.path,
+            title: options.title,
+            content: options.content,
+            word_count: options.content.split(/\s+/).filter(Boolean).length,
+            created_at: note.created_at,
+            updated_at: today,
+            tags: JSON.stringify(tagsArr),
+          });
+
+          saveDb(vaultPath);
+          closeDb();
+          console.log(`Card updated: ${filePath}`);
+          return;
+        }
 
         const existingTags = (() => {
           try { return JSON.parse(note.tags || '[]').join(', '); }

@@ -77,4 +77,31 @@ describe('review command', () => {
 
     expect(output).toContain('2 more card(s) due today.');
   });
+
+  it('should use --quality flag to skip interactive prompts', async () => {
+    await fs.writeFile(path.join(tmpDir, 'quality-note.md'), '# Quality Note');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const output = execSync(`${CLI} review "${tmpDir}" --quality 4`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+      timeout: 5000,
+    });
+
+    expect(output).toContain('Session Complete');
+    expect(output).toContain('Reviewed: 1/1');
+  });
+
+  it('should use --quality with --tui in non-interactive mode', async () => {
+    await fs.writeFile(path.join(tmpDir, 'tui-quality.md'), '# TUI Quality');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const output = execSync(`${CLI} review "${tmpDir}" --tui --quality 5`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+      timeout: 5000,
+    });
+
+    expect(output).toBeDefined();
+  });
 });

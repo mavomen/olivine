@@ -55,4 +55,68 @@ describe('edit command', () => {
       stdio: 'pipe',
     })).toThrow();
   });
+
+  it('should edit card non-interactively with --id --title --content', async () => {
+    await fs.writeFile(path.join(tmpDir, 'edit-me.md'), '# Original Title\n\nOriginal content');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const noteId = execSync(
+      `sqlite3 "${tmpDir}/.olivine/olivine.db" "SELECT id FROM notes LIMIT 1"`,
+      { encoding: 'utf-8' },
+    ).trim();
+
+    const output = execSync(
+      `${CLI} edit "${tmpDir}" --id "${noteId}" --title "New Title" --content "New content"`,
+      { encoding: 'utf-8', stdio: 'pipe' },
+    );
+
+    expect(output).toContain('Card updated');
+
+    // Verify DB was updated
+    const dbOutput = execSync(
+      `sqlite3 "${tmpDir}/.olivine/olivine.db" "SELECT title FROM notes WHERE id='${noteId}'"`,
+      { encoding: 'utf-8' },
+    ).trim();
+    expect(dbOutput).toBe('New Title');
+  });
+
+  it('should edit with --tags in non-interactive mode', async () => {
+    await fs.writeFile(path.join(tmpDir, 'tag-card.md'), '# Tag Card\n\nSome content');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const noteId = execSync(
+      `sqlite3 "${tmpDir}/.olivine/olivine.db" "SELECT id FROM notes LIMIT 1"`,
+      { encoding: 'utf-8' },
+    ).trim();
+
+    const output = execSync(
+      `${CLI} edit "${tmpDir}" --id "${noteId}" --title "Tagged" --content "Taggable" --tags "foo, bar"`,
+      { encoding: 'utf-8', stdio: 'pipe' },
+    );
+
+    expect(output).toContain('Card updated');
+
+    const tagsJson = execSync(
+      `sqlite3 "${tmpDir}/.olivine/olivine.db" "SELECT tags FROM notes WHERE id='${noteId}'"`,
+      { encoding: 'utf-8' },
+    ).trim();
+    const tags = JSON.parse(tagsJson);
+    expect(tags).toContain('foo');
+    expect(tags).toContain('bar');
+  });
+
+  it('should error on non-TTY edit without --title or --content', async () => {
+    await fs.writeFile(path.join(tmpDir, 'partial.md'), '# Partial');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const noteId = execSync(
+      `sqlite3 "${tmpDir}/.olivine/olivine.db" "SELECT id FROM notes LIMIT 1"`,
+      { encoding: 'utf-8' },
+    ).trim();
+
+    expect(() => execSync(
+      `${CLI} edit "${tmpDir}" --id "${noteId}" --title "Only Title"`,
+      { encoding: 'utf-8', stdio: 'pipe' },
+    )).toThrow();
+  });
 });
