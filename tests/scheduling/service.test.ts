@@ -71,4 +71,32 @@ describe('scheduling service', () => {
       expect(updated.archived).toBe(1);
     });
   });
+
+  describe('FSRS algorithm integration', () => {
+    it('should initialize scheduling with fsrs algorithm', () => {
+      initializeScheduling(db, 'test-note', 'fsrs');
+      const row = getSchedulingForNote(db, 'test-note');
+      expect(row).toBeTruthy();
+      expect(row!.algorithm).toBe('fsrs');
+      expect(row!.stability).toBe(0);
+      expect(row!.difficulty).toBe(5);
+    });
+
+    it('should apply review with fsrs algorithm and persist stability/difficulty', () => {
+      initializeScheduling(db, 'test-note', 'fsrs');
+      const updated = applyReview(db, 'test-note', 3, '2025-06-01');
+      expect(updated.algorithm).toBe('fsrs');
+      expect(updated.stability).toBeGreaterThan(0);
+      expect(updated.difficulty).toBeGreaterThan(0);
+    });
+
+    it('should use algorithm override with fsrs without changing stored algorithm', () => {
+      initializeScheduling(db, 'test-note', 'leitner');
+      const updated = applyReview(db, 'test-note', 3, '2025-06-01', 'fsrs');
+      // Persisted with original algorithm
+      expect(updated.algorithm).toBe('leitner');
+      // But FSRS-specific fields are populated
+      expect(updated.stability).toBeGreaterThan(0);
+    });
+  });
 });

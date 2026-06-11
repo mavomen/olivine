@@ -43,7 +43,7 @@ describe('config command', () => {
   });
 
   it('should reject invalid algorithm', () => {
-    expect(() => execSync(`${CLI} config "${tmpDir}" --set algorithm=fsrs`, { stdio: 'pipe' })).toThrow(
+    expect(() => execSync(`${CLI} config "${tmpDir}" --set algorithm=nonexistent`, { stdio: 'pipe' })).toThrow(
       /Invalid algorithm/,
     );
   });

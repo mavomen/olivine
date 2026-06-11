@@ -1,10 +1,12 @@
 import type { SchedulingAlgorithm } from './types';
 import { leitnerAlgorithm } from './algorithms/leitner';
 import { sm2Algorithm } from './algorithms/sm2';
+import { fsrsAlgorithm } from './algorithms/fsrs';
 
 const registry = new Map<string, SchedulingAlgorithm>([
   ['leitner', leitnerAlgorithm],
   ['sm2', sm2Algorithm],
+  ['fsrs', fsrsAlgorithm],
 ]);
 
 export function getAlgorithm(name: string): SchedulingAlgorithm {
