@@ -87,6 +87,7 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
+ROADMAP.md
 .output
 
 # Gatsby files
@@ -97,6 +98,7 @@ dist
 
 # vuepress build output
 .vuepress/dist
+ROADMAP.md
 
 # vuepress v2.x temp directory
 .temp
@@ -106,6 +108,7 @@ dist
 
 # vitepress build output
 **/.vitepress/dist
+ROADMAP.md
 
 # vitepress cache directory
 **/.vitepress/cache

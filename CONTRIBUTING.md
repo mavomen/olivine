@@ -103,3 +103,32 @@ Before adding a dependency, ask:
 4. Does it pull in transitive complexity?
 
 Prefer fewer dependencies. Every dependency becomes future maintenance debt.
+
+## Commit Message Format
+
+Every commit message must follow this structure:
+
+```
+type(scope): short description in imperative mood
+
+Optional longer explanation.
+```
+
+**Types:** `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
+
+**Scope:** a short noun identifying the area of the change (e.g., `leitner`, `tui`, `session`, `stats`).
+
+**Description:** lowercase, no trailing punctuation, imperative mood.
+
+Examples:
+
+```
+feat(leitner): implement 7-box promotion logic
+fix(session): prevent duplicate reviews in fallback
+refactor(tui): extract virtual-list component
+test(stats): verify box distribution calculation
+docs(readme): add TUI controls section
+chore(ci): configure GitHub Actions matrix
+```
+
+This format is enforced by commitlint on every commit.

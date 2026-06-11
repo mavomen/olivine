@@ -94,7 +94,7 @@ src/
 - **CLI framework:** Commander + Inquirer (lazy‑loaded)
 - **TUI framework:** Blessed (custom widgets built on low‑level elements)
 - **Markdown parsing:** gray‑matter with H1 fallback for titles
-- **Testing:** Jest (22 suites, 98 tests)
+- **Testing:** Jest (42 suites, 289 tests)
 - **CI/CD:** GitHub Actions (Node 20/22/24 matrix)
 
 ---
@@ -130,15 +130,14 @@ stays a terminal tool.
 
 ## Scheduling Algorithms
 
-**Current:** Leitner Box (7 boxes, promote/demote, archive on graduation).
+| Algorithm | Status | Description |
+|-----------|--------|-------------|
+| Leitner | **Shipped** | 7 boxes, promote/demote, archive on graduation |
+| SM‑2 | **Shipped** | Ease-factor based scheduling (classic SuperMemo) |
+| FSRS | **Shipped** | Adaptive algorithm with 21 configurable weights |
 
-**Planned (future):**
-
-- SM‑2 — ease‑factor based scheduling
-- FSRS — adaptive algorithm that models memory decay
-
-The codebase is structured to support multiple algorithms. Switching
-between them will be possible per vault or per tag.
+Switch between algorithms per session with `--algo <name>` or permanently
+with `olivine migrate <vault> --algo <name>`.
 
 ---
 
@@ -146,24 +145,49 @@ between them will be possible per vault or per tag.
 
 | Command                      | Description                                 |
 | ---------------------------- | ------------------------------------------- |
-| `init <vault>`               | Bootstrap `.olivine` directory and database |
-| `add <vault>`                | Create a card (TUI form with vim motions)   |
-| `scan <vault>`               | Sync markdown files into the database       |
-| `review <vault> --tui`       | Start a TUI review session                  |
-| `review --tag <tag> <vault>` | Review only cards with a tag                |
-| `practice <vault>`           | Practice without saving results             |
-| `stats <vault>`              | Show box distribution, streak, etc.         |
-| `due <vault>`                | Count due cards                             |
-| `browse <vault> --tui`       | Full‑screen card browser                    |
-| `grep <vault> <pattern>`     | Search cards by content                     |
-| `edit <vault>`               | Edit an existing card                       |
-| `config <vault>`             | View or update settings                     |
-| `unarchive <vault>`          | Return an archived card to Box 1            |
+| `init <vault>`                 | Bootstrap `.olivine` directory and database |
+| `add <vault>`                  | Create a card (TUI form with vim motions)   |
+| `scan <vault>`                 | Sync markdown files into the database       |
+| `review <vault>`               | Start a review session (prompts or TUI)     |
+| `review <vault> --tui`         | TUI review session                          |
+| `review <vault> --tag <tag>`   | Review filtered by tag                      |
+| `review <vault> --algo <name>` | Algorithm override per session              |
+| `review <vault> --shuffle`     | Randomize card order                        |
+| `review <vault> --limit <n>`   | Cap session size                            |
+| `review <vault> --quality <n>` | Fixed rating (non-interactive)              |
+| `practice <vault>`             | Practice without saving results             |
+| `practice <vault> --tag <tag>` | Practice filtered by tag                    |
+| `practice <vault> --algo <n>`  | Algorithm override for practice             |
+| `practice <vault> --shuffle`   | Randomize practice order                    |
+| `practice <vault> --limit <n>` | Cap practice session                        |
+| `stats <vault>`                | Show box distribution, streak, etc.         |
+| `stats <vault> --tui`          | Full-screen TUI stats dashboard             |
+| `stats <vault> --tag <tag>`    | Stats filtered by tag                       |
+| `due <vault>`                  | Count due cards                             |
+| `browse <vault>`               | Browse cards (interactive list)             |
+| `browse <vault> --tui`         | Full‑screen card browser                    |
+| `browse <vault> --tag <tag>`   | Filter by tag                               |
+| `browse <vault> --all`         | Include archived cards                      |
+| `browse <vault> --id <id>`     | View a single card                          |
+| `browse <vault> --id <id> --json` | Output as JSON                          |
+| `grep <vault> <pattern>`       | Search cards by content                     |
+| `edit <vault>`                 | Edit an existing card (interactive)         |
+| `edit <vault> --id <id>`       | Edit a specific card                        |
+| `edit <vault> --id --title --content` | Non-interactive edit                  |
+| `edit <vault> --id --title --content --tags` | Edit with tags                 |
+| `config <vault>`               | View or update settings (`--set`)           |
+| `unarchive <vault> --id <id>`  | Unarchive a specific card                   |
+| `unarchive <vault> --all`      | Unarchive all cards                         |
+| `migrate <vault> --algo <n>`   | Migrate all cards to a new algorithm        |
+| `export <vault>`               | Export all data as JSON                     |
+| `export <vault> --output <f>`  | Export to file                              |
+| `import <vault> <file>`        | Import from JSON backup                     |
 
 ---
 
 ## Version History
 
+- **v0.4.0** — FSRS algorithm, export/import, migrate, non-TTY fallback
 - **v0.3.1** — Codebase refactor for clarity; documentation
 - **v0.3.0** — TUI browse, tags, grep, practice mode, Leitner algorithm
 - **v0.2.0** — Inquirer review, stats, due, config, edit, browse commands
@@ -173,7 +197,8 @@ between them will be possible per vault or per tag.
 
 ## Documentation
 
-- [README.md](README.md) — installation and usage
-- [docs/ADR.md](docs/ADR.md) — architecture decisions
-- [CONTRIBUTING.md](CONTRIBUTING.md) — workflow and conventions
-- [CHANGELOG.md](CHANGELOG.md) — release notes
+- [README.md](../README.md) — project overview
+- [GUIDE.md](GUIDE.md) — installation and usage
+- [ADR.md](ADR.md) — architecture decisions
+- [CONTRIBUTING.md](../CONTRIBUTING.md) — workflow and conventions
+- [CHANGELOG.md](../CHANGELOG.md) — release notes

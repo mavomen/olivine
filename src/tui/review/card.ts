@@ -1,14 +1,26 @@
 import blessed, { Widgets } from 'blessed';
 
+/** State describing the current review card. */
 export interface CardState {
   title: string;
   content: string;
   revealed: boolean;
   index: number;
   total: number;
+  remaining: number;
   box: number;
 }
 
+/**
+ * Create a blessed box element displaying a review card with keyboard controls.
+ * @param screen - The blessed screen.
+ * @param card - Card content and state.
+ * @param onReveal - Called when the user reveals the answer.
+ * @param onUnreveal - Called when the user goes back to the question.
+ * @param onRate - Called with the quality rating (0-5) when the user rates.
+ * @param onQuit - Called when the user quits the review.
+ * @returns The created box element.
+ */
 export function createCardBox(
   screen: Widgets.Screen,
   card: CardState,
@@ -23,7 +35,7 @@ export function createCardBox(
     width: '80%',
     height: '70%',
     border: 'line',
-    label: ` Card no. ${card.index} of ${card.total} — Box ${card.box} `,
+    label: ` Card no. ${card.index} of ${card.total} — ${card.remaining} remaining — Box ${card.box} `,
     style: {
       border: { fg: 'cyan' },
       focus: { border: { fg: 'green' } },
@@ -58,7 +70,7 @@ export function createCardBox(
     right: 0,
     height: 3,
     content: card.revealed
-      ? ' rating:  [0] blackout  [1] incorrect  [2] hard  [3] good  [4] easy'
+      ? ' rating:  [0] blackout  [1] incorrect  [2] hard  [3] good  [4] easy  [5] perfect'
       : ' space to reveal the answer, backspace to go back to question',
     style: {
       bg: card.revealed ? 'green' : 'blue',
@@ -80,7 +92,7 @@ export function createCardBox(
     }
   });
 
-  box.key(['0', '1', '2', '3', '4'], (ch: string) => {
+  box.key(['0', '1', '2', '3', '4', '5'], (ch: string) => {
     if (card.revealed) {
       const quality = parseInt(ch, 10);
       onRate(quality);

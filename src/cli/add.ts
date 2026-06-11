@@ -50,6 +50,7 @@ async function createCardFile(
   return { relativePath, filePath };
 }
 
+/** Build and return the `add` CLI command for creating new cards. */
 export function buildAddCommand(): Command {
   return new Command('add')
     .description('Create a new card')

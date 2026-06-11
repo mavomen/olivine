@@ -1,5 +1,6 @@
 import matter from 'gray-matter';
 
+/** The result of parsing a markdown note file. */
 export interface ParsedNote {
   title: string;
   content: string;
@@ -7,6 +8,7 @@ export interface ParsedNote {
   tags: string[];
 }
 
+/** Parse raw markdown text into a structured note, extracting frontmatter and deriving title/word-count/tags. */
 export function parseMarkdown(raw: string): ParsedNote {
   const { data, content } = matter(raw);
   let title = typeof data.title === 'string' ? data.title : '';

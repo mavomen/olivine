@@ -44,4 +44,37 @@ describe('session loader', () => {
     const session = loadDueSession(db);
     expect(session).toBeNull();
   });
+
+  it('should limit notes when limit param is provided', () => {
+    addNote('a');
+    addNote('b');
+    addNote('c');
+    const session = loadDueSession(db, undefined, 2);
+    expect(session).not.toBeNull();
+    expect(session!.notes).toHaveLength(2);
+  });
+
+  it('should calculate remainingDue when limit is applied', () => {
+    addNote('a');
+    addNote('b');
+    addNote('c');
+    const session = loadDueSession(db, undefined, 2);
+    expect(session!.remainingDue).toBe(1);
+  });
+
+  it('should set remainingDue to 0 when limit exceeds total due', () => {
+    addNote('a');
+    addNote('b');
+    const session = loadDueSession(db, undefined, 10);
+    expect(session!.notes).toHaveLength(2);
+    expect(session!.remainingDue).toBe(0);
+  });
+
+  it('should set remainingDue to 0 when no limit', () => {
+    addNote('a');
+    addNote('b');
+    addNote('c');
+    const session = loadDueSession(db);
+    expect(session!.remainingDue).toBe(0);
+  });
 });

@@ -2,6 +2,7 @@ import { Database } from 'sql.js';
 import { totalNotes, dueNotesCount, reviewedToday, boxDistribution, archivedCount, totalReviews, streak } from './calculator';
 import { todayISO } from '../utils/date';
 
+/** A snapshot of review statistics at a point in time. */
 export interface StatsSnapshot {
   totalNotes: number;
   dueNotes: number;
@@ -12,6 +13,12 @@ export interface StatsSnapshot {
   streak: number;
 }
 
+/**
+ * Gathers a snapshot of review statistics from the database.
+ * @param db - SQLite database instance
+ * @param tag - Optional tag to filter by
+ * @returns A StatsSnapshot
+ */
 export function getStats(db: Database, tag?: string): StatsSnapshot {
   const today = todayISO();
   return {
@@ -25,6 +32,11 @@ export function getStats(db: Database, tag?: string): StatsSnapshot {
   };
 }
 
+/**
+ * Formats a StatsSnapshot into a human-readable string.
+ * @param stats - The stats snapshot to format
+ * @returns Formatted string for display
+ */
 export function formatStats(stats: StatsSnapshot): string {
   const boxLines = Object.entries(stats.boxDistribution)
     .map(([box, count]) => `  Box ${box}: ${count} card(s)`)

@@ -33,4 +33,31 @@ describe('scan command', () => {
     const output = execSync(`${CLI} scan "${tmpDir}"`, { encoding: 'utf-8' });
     expect(output).toMatch(/0 notes added/);
   });
+
+  it('should detect newly added files on re-scan', async () => {
+    await fs.writeFile(path.join(tmpDir, 'first.md'), '# First');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    await fs.writeFile(path.join(tmpDir, 'second.md'), '# Second');
+    const output = execSync(`${CLI} scan "${tmpDir}"`, { encoding: 'utf-8' });
+    expect(output).toMatch(/1 notes added/);
+  });
+
+  it('should discover markdown files in subdirectories', async () => {
+    await fs.mkdir(path.join(tmpDir, 'subdir'), { recursive: true });
+    await fs.writeFile(path.join(tmpDir, 'subdir', 'deep.md'), '# Deep');
+
+    const output = execSync(`${CLI} scan "${tmpDir}"`, { encoding: 'utf-8' });
+    expect(output).toMatch(/1 notes added/);
+  });
+
+  it('should ignore non-markdown files and .obsidian directory', async () => {
+    await fs.writeFile(path.join(tmpDir, 'image.png'), 'fake-png');
+    await fs.writeFile(path.join(tmpDir, 'notes.txt'), 'text');
+    await fs.mkdir(path.join(tmpDir, '.obsidian'), { recursive: true });
+    await fs.writeFile(path.join(tmpDir, '.obsidian', 'config.json'), '{}');
+
+    const output = execSync(`${CLI} scan "${tmpDir}"`, { encoding: 'utf-8' });
+    expect(output).toMatch(/0 notes added/);
+  });
 });

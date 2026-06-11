@@ -7,6 +7,7 @@ import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 import chalk from 'chalk';
 
+/** Build and return the `grep` CLI command for searching card content. */
 export function buildGrepCommand(): Command {
   return new Command('grep')
     .description('Search cards by question or answer content')

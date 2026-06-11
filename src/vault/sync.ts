@@ -2,11 +2,14 @@ import { promises as fs } from 'node:fs';
 import { Database } from 'sql.js';
 import { scanVault } from '../vault/scanner';
 import { parseMarkdown } from '../vault/parser';
-import { insertNote, getAllNotes, deleteNoteByPath } from '../models/note';
+import { insertNote, getAllNotes, deleteNoteByPath, getNoteByPath } from '../models/note';
 import { initializeScheduling } from '../scheduling/service';
+import { deleteReviewsForNote } from '../models/review';
+import { deleteScheduling } from '../models/scheduling';
 import type { NoteRow } from '../models/note';
 import { logger } from '../utils/logger';
 
+/** Scan the vault on disk and reconcile notes with the database — adding new notes and removing deleted ones. */
 export async function syncVault(vaultPath: string, db: Database): Promise<{ added: number; removed: number }> {
   const scannedFiles = await scanVault(vaultPath);
   const existingNotes = getAllNotes(db);
@@ -40,7 +43,12 @@ export async function syncVault(vaultPath: string, db: Database): Promise<{ adde
   let removed = 0;
   for (const existingPath of existingPaths) {
     if (!scannedPaths.has(existingPath)) {
+      const note = getNoteByPath(db, existingPath);
       deleteNoteByPath(db, existingPath);
+      if (note) {
+        deleteScheduling(db, note.id);
+        deleteReviewsForNote(db, note.id);
+      }
       removed++;
     }
   }

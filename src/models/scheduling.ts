@@ -1,5 +1,6 @@
 import { Database } from 'sql.js';
 
+/** A row from the `scheduling` table. */
 export interface SchedulingRow {
   note_id: string;
   ease_factor: number;
@@ -9,13 +10,17 @@ export interface SchedulingRow {
   last_reviewed: string | null;
   box: number;
   archived: number;
+  algorithm: string;
+  stability: number;
+  difficulty: number;
 }
 
+/** Insert or replace a scheduling row. */
 export function insertScheduling(db: Database, row: SchedulingRow): void {
   db.run(
-    `INSERT OR REPLACE INTO scheduling (note_id, ease_factor, repetitions, interval_days, due_date, last_reviewed, box, archived)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [row.note_id, row.ease_factor, row.repetitions, row.interval_days, row.due_date, row.last_reviewed, row.box, row.archived],
+    `INSERT OR REPLACE INTO scheduling (note_id, ease_factor, repetitions, interval_days, due_date, last_reviewed, box, archived, algorithm, stability, difficulty)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [row.note_id, row.ease_factor, row.repetitions, row.interval_days, row.due_date, row.last_reviewed, row.box, row.archived, row.algorithm, row.stability, row.difficulty],
   );
 }
 
@@ -42,18 +47,22 @@ function getAllSchedulingRows(db: Database, sql: string, params: unknown[] = [])
   return rows;
 }
 
+/** Return the scheduling row for a specific note. */
 export function getSchedulingForNote(db: Database, noteId: string): SchedulingRow | undefined {
   return getOneScheduling(db, 'SELECT * FROM scheduling WHERE note_id = ?', [noteId]);
 }
 
+/** Return every scheduling row. */
 export function getAllScheduling(db: Database): SchedulingRow[] {
   return getAllSchedulingRows(db, 'SELECT * FROM scheduling');
 }
 
+/** Return scheduling rows that are due on or before `today`, up to `limit` items. */
 export function getDueNotes(db: Database, today: string, limit: number): SchedulingRow[] {
   return getAllSchedulingRows(db, 'SELECT * FROM scheduling WHERE due_date <= ? AND archived = 0 ORDER BY due_date ASC LIMIT ?', [today, limit]);
 }
 
+/** Return due scheduling rows that also match a given tag. */
 export function getDueNotesByTag(db: Database, today: string, tag: string, limit: number): SchedulingRow[] {
   return getAllSchedulingRows(
     db,
@@ -65,6 +74,7 @@ export function getDueNotesByTag(db: Database, today: string, tag: string, limit
   );
 }
 
+/** Delete the scheduling row for a note. */
 export function deleteScheduling(db: Database, noteId: string): void {
   db.run('DELETE FROM scheduling WHERE note_id = ?', [noteId]);
 }

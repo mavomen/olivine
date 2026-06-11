@@ -1,5 +1,34 @@
 # Changelog
 
+## v0.4.0 – 2026-06-11
+
+### Added
+
+- **FSRS algorithm** — adaptive scheduling with 21 configurable weights
+  (FSRS v6 specification).
+- **SM-2 algorithm** — classic ease-factor based SuperMemo scheduling.
+- **Export/Import** — JSON backup and restore (`olivine export`, `olivine import`).
+- **Migrate command** — switch all cards between algorithms
+  (`olivine migrate --algo <name>`).
+- **Non-TTY fallback** — `--quality` flag for review, `--id`/`--json` for browse,
+  `--title`/`--content`/`--tags` for edit, so all commands work in CI and pipes.
+- **GUIDE.md** — new user guide with installation, per-command HOW-TO-USE,
+  and spaced repetition overview.
+- **JSDoc docstrings** on all exported functions across the codebase.
+
+### Changed
+
+- **README.md** — stripped to project overview; setup and usage moved to GUIDE.md.
+- **ADR.md** — added ADR-10 (FSRS), ADR-11 (export/import), ADR-12 (isTTY guards).
+- **PRD.md** — SM-2 and FSRS marked as shipped; added missing commands and flags.
+
+### Fixed
+
+- TUI commands (browse, stats, review) now throw clear errors instead of
+  hanging when run in non-TTY environments.
+
+---
+
 ## v0.3.1 – 2026-06-04
 
 ### Changed

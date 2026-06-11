@@ -7,10 +7,20 @@ import { applyReview } from '../../scheduling/service';
 import { todayISO } from '../../utils/date';
 import { getSchedulingForNote } from '../../models/scheduling';
 
+/** Options controlling TUI review session behavior. */
 export interface TuiOptions {
   dryRun?: boolean;
+  algorithmOverride?: string;
+  quality?: number;
 }
 
+/**
+ * Run an interactive review session in the terminal.
+ * @param db - The database instance.
+ * @param session - The review session to execute.
+ * @param options - Optional configuration overrides.
+ * @returns A promise that resolves when the session ends.
+ */
 export function runTuiSession(db: Database, session: ReviewSession, options: TuiOptions = {}): Promise<void> {
   if (!process.stdout.isTTY) {
     return runFallback(db, session, options);
@@ -24,6 +34,7 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
 
     const today = todayISO();
     let cardBox: ReturnType<typeof createCardBox> | null = null;
+    let flashing = false;
 
     function getCurrentBox(): number {
       const note = currentNote(session);
@@ -50,6 +61,7 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
           revealed,
           index: session.currentIndex + 1,
           total: session.notes.length,
+          remaining: session.notes.length - (session.currentIndex + 1),
           box,
         },
         () => renderCard(true),
@@ -58,10 +70,21 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
           applyQuality(session, quality);
           if (!options.dryRun) {
             insertReview(db, note.note.id, quality, today);
-            applyReview(db, note.note.id, quality, today);
+            applyReview(db, note.note.id, quality, today, options.algorithmOverride);
           }
-          advanceNote(session);
-          renderCard(false);
+          if (cardBox && !flashing) {
+            flashing = true;
+            cardBox.style.border = { fg: quality >= 3 ? 'green' : 'red' };
+            screen.render();
+            setTimeout(() => {
+              flashing = false;
+              advanceNote(session);
+              renderCard(false);
+            }, 600);
+          } else {
+            advanceNote(session);
+            renderCard(false);
+          }
         },
         () => showSummary(),
       );
@@ -71,33 +94,79 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
 
     function showSummary() {
       if (cardBox) cardBox.detach();
+
       const stats = sessionStats(session);
       const duration = sessionDuration(session);
       const minutes = Math.floor(duration / 60000);
       const seconds = Math.floor((duration % 60000) / 1000);
-
       const label = options.dryRun ? ' Practice Complete' : ' Session Complete';
+      const remainingLines = session.remainingDue > 0
+        ? [`${session.remainingDue} more card(s) due today`]
+        : [];
 
-      const msg = blessed.box({
+      const container = blessed.box({
         parent: screen,
         top: 'center',
         left: 'center',
-        width: '50%',
-        height: 12,
+        width: '60%',
+        height: '70%',
         border: 'line',
         style: { border: { fg: 'green' } },
+      });
+
+      blessed.box({
+        parent: container,
+        top: 0,
+        left: 1,
+        right: 1,
+        height: 4,
         content: [
           label,
-          ' ────────────────',
-          ` Reviewed: ${stats.reviewed}/${stats.total}`,
-          ` Failed:   ${stats.failed}`,
-          ` Duration: ${minutes}m ${seconds}s`,
-          options.dryRun ? ' (practice — no changes saved)' : '',
-          '',
-          ' All caught up!',
-          '',
-          ' Press q to exit',
+          ` Reviewed: ${stats.reviewed}/${stats.total}    Failed: ${stats.failed}`,
+          ` Duration: ${minutes}m ${seconds}s${options.dryRun ? ' (practice)' : ''}`,
+          ...remainingLines,
         ].join('\n'),
+        style: { bold: true },
+      });
+
+      const listItems = session.notes.map((sn) => {
+        let icon: string;
+        if (!sn.reviewed) {
+          icon = '{yellow-fg}—{/yellow-fg}';
+        } else if (sn.quality !== null && sn.quality >= 3) {
+          icon = '{green-fg}✓{/green-fg}';
+        } else {
+          icon = '{red-fg}✗{/red-fg}';
+        }
+        const title = sn.note.title.length > 60
+          ? sn.note.title.slice(0, 60) + '…'
+          : sn.note.title;
+        return `${icon} ${title}`;
+      });
+
+      const list = blessed.list({
+        parent: container,
+        top: 4,
+        left: 1,
+        right: 1,
+        bottom: 1,
+        items: listItems,
+        tags: true,
+        keys: true,
+        vi: true,
+        style: {
+          selected: { fg: 'white', bg: 'blue' },
+        },
+      });
+
+      blessed.box({
+        parent: container,
+        bottom: 0,
+        left: 1,
+        right: 1,
+        height: 1,
+        content: ' Press q to exit  (↑↓ to scroll)',
+        style: { fg: 'cyan' },
       });
 
       screen.key(['q', 'escape', 'C-c'], () => {
@@ -105,7 +174,7 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
         resolve();
       });
 
-      msg.focus();
+      list.focus();
       screen.render();
     }
 
@@ -122,15 +191,19 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
 
 async function runFallback(db: Database, session: ReviewSession, options: TuiOptions = {}): Promise<void> {
   const today = todayISO();
+  const q = options.quality ?? 4;
   for (const sn of session.notes) {
     if (sn.reviewed) continue;
     if (!options.dryRun) {
-      insertReview(db, sn.note.id, 4, today);
-      applyReview(db, sn.note.id, 4, today);
+      insertReview(db, sn.note.id, q, today);
+      applyReview(db, sn.note.id, q, today, options.algorithmOverride);
     }
-    sn.quality = 4;
+    sn.quality = q;
     sn.reviewed = true;
     session.currentIndex++;
   }
   session.phase = 'summary';
+  if (session.remainingDue > 0) {
+    console.log(`${session.remainingDue} more card(s) due today.`);
+  }
 }

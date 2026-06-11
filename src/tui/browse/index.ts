@@ -1,10 +1,12 @@
 import blessed from 'blessed';
 import { Database } from 'sql.js';
-import { getAllNotes, NoteRow } from '../../models/note';
+import { getAllNotes, insertNote, deleteNoteByPath, NoteRow } from '../../models/note';
 import { getAllScheduling, SchedulingRow } from '../../models/scheduling';
 import { getReviewsForNote } from '../../models/review';
 import { createVirtualList, VirtualListRow } from './virtual-list';
-import { AddCardResult } from '../card-form';
+import { showAddCardForm, AddCardResult } from '../card-form';
+import { saveDb } from '../../database/connection';
+import { initializeScheduling } from '../../scheduling/service';
 import chalk from 'chalk';
 
 interface BrowseState {
@@ -16,7 +18,15 @@ interface BrowseState {
   listRows: VirtualListRow[];
 }
 
+/**
+ * Open the interactive browse TUI for viewing and managing cards.
+ * @param vaultPath - Path to the vault for database persistence.
+ * @param db - The database instance.
+ */
 export function openBrowseTui(vaultPath: string, db: Database): void {
+  if (!process.stdout.isTTY) {
+    throw new Error('TUI browser requires a TTY.');
+  }
   // Clear any leftover terminal content from the previous screen before blessed's
   // smartCSR (differential renderer) takes over — otherwise old chars bleed through.
   process.stdout.write('\x1b[2J\x1b[0;0H');
@@ -26,8 +36,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     title: 'Olivine — Browse Cards',
     dockBorders: false,
   });
-
-  // Load data
   const notes = getAllNotes(db);
   const scheduling = getAllScheduling(db);
   const schedMap = new Map<string, SchedulingRow>();
@@ -81,7 +89,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
 
   updateFilteredList();
 
-  // ── Layout ──────────────────────────────────────────────────────────────────
 
   blessed.box({
     parent: screen,
@@ -133,7 +140,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     },
   });
 
-  // ── Detail renderer ──────────────────────────────────────────────────────────
 
   function renderDetail(note: NoteRow) {
     const s = schedMap.get(note.id);
@@ -172,7 +178,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     renderDetail(state.listRows[0]!.data as NoteRow);
   }
 
-  // ── Helper: destroy screen then run callback on next tick ────────────────────
   // This prevents keypresses from the current screen bleeding into the next
   // blessed screen (the root cause of the jjjkk leak into the add form buffer).
   function transitionTo(fn: () => void) {
@@ -184,7 +189,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     setTimeout(fn, 50);
   }
 
-  // ── Keybindings ──────────────────────────────────────────────────────────────
 
   screen.key(['j', 'down'], () => {
     list.moveSelection(1);
@@ -268,7 +272,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     });
   });
 
-  // ── Enter: edit selected card ─────────────────────────────────────────────────
 
   screen.key(['enter'], () => {
     const idx = list.getSelectedIndex();
@@ -280,12 +283,9 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     })();
 
     transitionTo(() => {
-      const { showAddCardForm } = require('../session/tui-add');
       showAddCardForm(
         'vault root',
         (result: AddCardResult) => {
-          const { insertNote } = require('../models/note');
-          const { saveDb } = require('../database/connection');
           insertNote(db, {
             id: note.id,
             path: note.path,
@@ -309,17 +309,12 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     });
   });
 
-  // ── a: add new card ───────────────────────────────────────────────────────────
 
   screen.key(['a'], () => {
     transitionTo(() => {
-      const { showAddCardForm } = require('../session/tui-add');
       showAddCardForm(
         'vault root',
         (result: AddCardResult) => {
-          const { insertNote } = require('../models/note');
-          const { initializeScheduling } = require('../scheduling/service');
-          const { saveDb } = require('../database/connection');
           const slug = result.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 64);
           const id = slug + '.md';
           const today = new Date().toISOString().split('T')[0]!;
@@ -344,7 +339,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     });
   });
 
-  // ── d: delete card ────────────────────────────────────────────────────────────
 
   screen.key(['d'], () => {
     const idx = list.getSelectedIndex();
@@ -363,8 +357,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
 
     prompt.ask(`Delete "${note.title}"? (y/N):`, (err: Error | null, value: string) => {
       if (value?.toLowerCase() === 'y') {
-        const { deleteNoteByPath } = require('../models/note');
-        const { saveDb } = require('../database/connection');
         deleteNoteByPath(db, note.path);
         saveDb(vaultPath);
         screen.destroy();
@@ -375,7 +367,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     });
   });
 
-  // ── h: review history ─────────────────────────────────────────────────────────
 
   screen.key(['h'], () => {
     const idx = list.getSelectedIndex();
@@ -394,14 +385,13 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     screen.render();
   });
 
-  // ── q: quit ───────────────────────────────────────────────────────────────────
   // screen.destroy() alone leaves the process alive if there are pending async
   // ops (the db connection, blessed internals). We also restore the cursor and
   // explicitly end the process.
 
   screen.key(['q', 'C-c'], () => {
     screen.destroy();
-    process.stdout.write('\x1b[?25h'); // restore cursor visibility
+    process.stdout.write('\x1b[?25h');
     process.exit(0);
   });
 

@@ -1,13 +1,14 @@
 import { Command } from 'commander';
 import { getDb, closeDb } from '../database/connection';
 import { bootstrapDatabase } from '../database/bootstrap';
-import { getAllNotes, getNotesByTag } from '../models/note';
+import { getAllNotes, getNoteById, getNotesByTag } from '../models/note';
 import { getAllScheduling, SchedulingRow } from '../models/scheduling';
 import { getReviewsForNote } from '../models/review';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 import chalk from 'chalk';
 
+/** Build and return the `browse` CLI command for viewing cards. */
 export function buildBrowseCommand(): Command {
   return new Command('browse')
     .description('Browse cards')
@@ -15,16 +16,85 @@ export function buildBrowseCommand(): Command {
     .option('--all', 'Include archived cards')
     .option('--tag <tag>', 'Filter by tag')
     .option('--tui', 'Open full‑screen TUI browser')
-    .action(async (vaultPath: string, options: { all?: boolean; tag?: string; tui?: boolean }) => {
+    .option('--id <noteId>', 'Show a specific card by ID')
+    .option('--json', 'Output card data as JSON (requires --id)')
+    .action(async (vaultPath: string, options: { all?: boolean; tag?: string; tui?: boolean; id?: string; json?: boolean }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
 
+        const isTty = !!process.stdout.isTTY;
+
         if (options.tui) {
+          if (!isTty) {
+            throw new Error('TUI browser requires a TTY. Use --id <noteId> to view a card non-interactively.');
+          }
           const { openBrowseTui } = await import('../tui/browse');
           openBrowseTui(vaultPath, db);
           return;
+        }
+
+        if (options.id) {
+          const note = getNoteById(db, options.id);
+          if (!note) throw new Error(`Card not found: ${options.id}`);
+
+          if (options.json) {
+            const sched = getAllScheduling(db).find(s => s.note_id === note.id);
+            const reviews = getReviewsForNote(db, note.id);
+            console.log(JSON.stringify({ note, scheduling: sched ?? null, reviews }, null, 2));
+            closeDb();
+            return;
+          }
+
+          console.log(chalk.bold.yellow('\n' + '═'.repeat(60)));
+          if (note.tags && note.tags !== '[]') console.log(chalk.dim('  Tags: ' + JSON.parse(note.tags).join(', ')));
+          console.log(chalk.bold.yellow('  QUESTION:'));
+          console.log(chalk.white('  ' + note.title));
+          console.log(chalk.bold.yellow('  ANSWER:'));
+          note.content.split('\n').forEach((line) => console.log(chalk.white('  ' + line)));
+          console.log(chalk.bold.yellow('═'.repeat(60) + '\n'));
+
+          if (!isTty) {
+            closeDb();
+            return;
+          }
+
+          let viewing = true;
+          const { default: inquirer } = await import('inquirer');
+          while (viewing) {
+            const { action } = await inquirer.prompt([{
+              type: 'list', name: 'action', message: 'What next?',
+              choices: [
+                { name: 'Back to list', value: 'back' },
+                { name: 'View history', value: 'history' },
+                { name: 'Quit', value: 'quit' },
+              ],
+            }]);
+
+            if (action === 'back') viewing = false;
+            else if (action === 'quit') { viewing = false; }
+            else if (action === 'history') {
+              const reviews = getReviewsForNote(db, note.id);
+              console.log(chalk.bold.magenta('\n  REVIEW HISTORY:'));
+              if (reviews.length === 0) console.log(chalk.gray('  No reviews yet.'));
+              else {
+                for (const r of reviews) {
+                  const qualityColor = r.quality >= 3 ? 'green' : 'red';
+                  console.log(chalk`    {bold ${r.reviewed_at}}  quality: {${qualityColor} ${r.quality}}`);
+                }
+              }
+              console.log();
+              await inquirer.prompt([{ type: 'input', name: 'dummy', message: 'Press Enter to continue' }]);
+            }
+          }
+
+          closeDb();
+          return;
+        }
+
+        if (!isTty) {
+          throw new Error('Interactive browse requires a TTY. Use --id <noteId> to view a card non-interactively.');
         }
 
         const allNotes = options.tag ? getNotesByTag(db, options.tag) : getAllNotes(db);

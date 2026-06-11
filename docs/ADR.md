@@ -212,3 +212,79 @@ the frequent small writes of a review session.
   automatically cleaned up on graceful exit.
 - The connection manager handles this transparently, so the rest of the
   code never needs to worry about journal modes.
+
+---
+
+## 10. FSRS Algorithm Implementation
+
+**Context:** The Leitner Box system, while intuitive, does not model
+individual card difficulty or user memory patterns. We wanted a modern,
+adaptive algorithm that learns from each review to optimize scheduling.
+SM-2 was already implemented as a reference but uses fixed ease factors.
+
+**Decision:** Implement FSRS v6 (Free Spaced Repetition Scheduler) with
+the standard 21-parameter weight vector. FSRS models the probability of
+recall using a exponential decay function and adjusts intervals to hit a
+target retention rate. The implementation follows the FSRS v6 specification
+and uses the default weights from the reference Python implementation.
+
+**Consequences:**
+- Users get a scheduling algorithm that adapts to their actual memory
+  patterns rather than assuming fixed difficulty.
+- The algorithm interface (`src/scheduling/types.ts`) made adding FSRS a
+  matter of implementing `schedule()`, `initialState()`, and `name()`
+  without changing any other code.
+- FSRS needs at least a few reviews per card to converge. Initial
+  scheduling uses conservative defaults until enough data accumulates.
+- The default weights work well for most users; advanced users can tweak
+  them via configuration in the future.
+
+---
+
+## 11. Export / Import as JSON
+
+**Context:** Users needed a way to back up their scheduling data, transfer
+between machines, or restore after a reinstall. The database is a binary
+SQLite file that is not portable across architectures or easy to inspect.
+
+**Decision:** Implement `export` and `import` commands that serialize the
+entire vault state (notes, scheduling, reviews) as a single JSON file. The
+export format uses arrays of flat objects that map directly to the database
+tables, making it human-readable and machine-parseable.
+
+**Consequences:**
+- Backups are plain JSON — inspectable, diffable, and storable in version
+  control alongside markdown notes.
+- Import is idempotent: running it twice on the same file produces the
+  same database state. This makes restore workflows safe.
+- The JSON format is intentionally simple (no nesting, no compression) to
+  make it easy for users to write custom scripts that generate or process
+  Olivine data.
+
+---
+
+## 12. Non-TTY Fallback and isTTY Guards
+
+**Context:** Olivine's review, browse, and edit commands used interactive
+prompts (Inquirer) and TUI screens (blessed) that hang or crash when
+run in a non-TTY environment (CI pipelines, SSH pipes, cron jobs). We
+needed a graceful degradation path.
+
+**Decision:** Add `process.stdout.isTTY` guards to all TUI entrypoints
+(`openBrowseTui`, `openStatsTui`, `runTuiSession`). When stdout is not a
+TTY, these functions throw a clear error instructing the user to use
+non-interactive flags instead. For the review command, the `--quality`
+flag provides a fixed rating that bypasses all prompts. For browse, the
+`--id` flag shows a single card (optionally as JSON with `--json`). For
+edit, the `--title`, `--content`, and `--tags` flags enable direct edits
+without the TUI form.
+
+**Consequences:**
+- All commands now work in non-TTY environments without hanging, as long
+  as the user supplies the required flags.
+- Interactive-only commands (`add`, `init --interactive`) still require a
+  TTY, but the error message is clear and actionable.
+- The `--tui` flag no longer acts as a "non-TTY fallback" — it explicitly
+  requires a TTY and errors if one is not available.
+- The test suite can run all commands in "pipe" mode without hanging,
+  making CI more reliable.
