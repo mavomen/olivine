@@ -145,7 +145,7 @@ with `olivine migrate <vault> --algo <name>`.
 
 | Command                      | Description                                 |
 | ---------------------------- | ------------------------------------------- |
-| `init <vault>`                 | Bootstrap `.olivine` directory and database |
+| `init [vault]`                 | Bootstrap `.olivine` directory and database |
 | `add <vault>`                  | Create a card (TUI form with vim motions)   |
 | `scan <vault>`                 | Sync markdown files into the database       |
 | `review <vault>`               | Start a review session (prompts or TUI)     |
@@ -163,6 +163,7 @@ with `olivine migrate <vault> --algo <name>`.
 | `stats <vault>`                | Show box distribution, streak, etc.         |
 | `stats <vault> --tui`          | Full-screen TUI stats dashboard             |
 | `stats <vault> --tag <tag>`    | Stats filtered by tag                       |
+| `stats <vault> --json`         | Output statistics as JSON                   |
 | `due <vault>`                  | Count due cards                             |
 | `browse <vault>`               | Browse cards (interactive list)             |
 | `browse <vault> --tui`         | Full‑screen card browser                    |
