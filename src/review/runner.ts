@@ -37,7 +37,7 @@ export async function runReviewSession(
       console.log(chalk.gray('----------------\n'));
     }
 
-    const quality = qualityOverride ?? await promptQuality();
+    const quality = qualityOverride ?? await promptQuality(db, sn.note.id, algorithmOverride);
     applyQuality(session, quality);
 
     insertReview(db, sn.note.id, quality, today);
