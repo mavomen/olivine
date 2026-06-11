@@ -26,6 +26,8 @@ function schedule(quality: number, state: SchedulingState, _today: string): Sche
       easeFactor: state.easeFactor,
       dueDate: '',
       archived: false,
+      stability: state.stability,
+      difficulty: state.difficulty,
     };
   }
 
@@ -38,6 +40,8 @@ function schedule(quality: number, state: SchedulingState, _today: string): Sche
       easeFactor: state.easeFactor,
       dueDate: '',
       archived: true,
+      stability: state.stability,
+      difficulty: state.difficulty,
     };
   }
 
@@ -48,11 +52,13 @@ function schedule(quality: number, state: SchedulingState, _today: string): Sche
     easeFactor: state.easeFactor,
     dueDate: '',
     archived: false,
+    stability: state.stability,
+    difficulty: state.difficulty,
   };
 }
 
 function initialState(): SchedulingState {
-  return { box: 1, repetitions: 0, intervalDays: BOX_INTERVALS[1]!, easeFactor: 2.5, archived: false };
+  return { box: 1, repetitions: 0, intervalDays: BOX_INTERVALS[1]!, easeFactor: 2.5, archived: false, stability: 0, difficulty: 5, lastReviewDate: null };
 }
 
 export const leitnerAlgorithm: SchedulingAlgorithm = {

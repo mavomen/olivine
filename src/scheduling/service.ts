@@ -15,6 +15,9 @@ function rowToState(row: SchedulingRow): SchedulingState {
     intervalDays: row.interval_days,
     easeFactor: row.ease_factor,
     archived: row.archived === 1,
+    stability: row.stability,
+    difficulty: row.difficulty,
+    lastReviewDate: row.last_reviewed,
   };
 }
 
@@ -29,6 +32,8 @@ function resultToRow(result: SchedulingResult, noteId: string, reviewedAt: strin
     box: result.box,
     archived: result.archived ? 1 : 0,
     algorithm,
+    stability: result.stability,
+    difficulty: result.difficulty,
   };
 }
 
@@ -52,6 +57,8 @@ export function initializeScheduling(db: Database, noteId: string, algo?: string
     box: state.box,
     archived: state.archived ? 1 : 0,
     algorithm,
+    stability: state.stability,
+    difficulty: state.difficulty,
   });
 }
 
@@ -73,7 +80,7 @@ export function applyReview(
   const state = rowToState(current);
 
   // If the card was created with Leitner (ease_factor=0) but we're running
-  // a different algorithm, seed a sensible ease factor so the first SM-2/FSRS
+  // a different algorithm, seed sensible defaults so the first SM-2/FSRS
   // interval calculation doesn't collapse to zero.
   if (state.easeFactor === 0 && algorithm !== 'leitner') {
     state.easeFactor = 2.5;

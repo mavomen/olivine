@@ -55,6 +55,8 @@ describe('scheduling repository', () => {
     box: 1,
     archived: 0,
     algorithm: 'leitner',
+    stability: 0,
+    difficulty: 5,
   };
 
   it('should insert and retrieve scheduling', () => {

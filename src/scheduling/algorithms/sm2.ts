@@ -34,6 +34,8 @@ function schedule(quality: number, state: SchedulingState, _today: string): Sche
       intervalDays: SM2_DEFAULTS.FAIL_INTERVAL,
       dueDate: '',
       archived: false,
+      stability: state.stability,
+      difficulty: state.difficulty,
     };
   }
 
@@ -55,11 +57,13 @@ function schedule(quality: number, state: SchedulingState, _today: string): Sche
     intervalDays: newInterval,
     dueDate: '',
     archived: false,
+    stability: state.stability,
+    difficulty: state.difficulty,
   };
 }
 
 function initialState(): SchedulingState {
-  return { box: 1, repetitions: 0, intervalDays: 1, easeFactor: SM2_DEFAULTS.INITIAL_EASE_FACTOR, archived: false };
+  return { box: 1, repetitions: 0, intervalDays: 1, easeFactor: SM2_DEFAULTS.INITIAL_EASE_FACTOR, archived: false, stability: 0, difficulty: 5, lastReviewDate: null };
 }
 
 export const sm2Algorithm: SchedulingAlgorithm = {

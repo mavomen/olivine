@@ -4,6 +4,9 @@ export interface SchedulingState {
   intervalDays: number;
   easeFactor: number;
   archived: boolean;
+  stability: number;
+  difficulty: number;
+  lastReviewDate: string | null;
 }
 
 export interface SchedulingResult {
@@ -13,6 +16,8 @@ export interface SchedulingResult {
   easeFactor: number;
   dueDate: string;
   archived: boolean;
+  stability: number;
+  difficulty: number;
 }
 
 export interface SchedulingAlgorithm {

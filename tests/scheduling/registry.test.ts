@@ -1,9 +1,9 @@
 import { getAlgorithm, listAlgorithms } from '../../src/scheduling/registry';
 
 describe('listAlgorithms', () => {
-  it('should return leitner and sm2', () => {
+  it('should return leitner, sm2, and fsrs', () => {
     const algos = listAlgorithms();
-    expect(algos).toEqual(['leitner', 'sm2']);
+    expect(algos).toEqual(['leitner', 'sm2', 'fsrs']);
   });
 
   it('should return a new array each call (immutable)', () => {
@@ -29,11 +29,18 @@ describe('getAlgorithm', () => {
     expect(typeof algo.initialState).toBe('function');
   });
 
+  it('should return the fsrs algorithm', () => {
+    const algo = getAlgorithm('fsrs');
+    expect(algo.name).toBe('fsrs');
+    expect(typeof algo.schedule).toBe('function');
+    expect(typeof algo.initialState).toBe('function');
+  });
+
   it('should throw for unknown algorithm', () => {
-    expect(() => getAlgorithm('fsrs')).toThrow('Unknown scheduling algorithm: "fsrs"');
+    expect(() => getAlgorithm('unknown')).toThrow('Unknown scheduling algorithm: "unknown"');
   });
 
   it('should list available algorithms in the error message', () => {
-    expect(() => getAlgorithm('invalid')).toThrow(/Available: leitner, sm2/);
+    expect(() => getAlgorithm('invalid')).toThrow(/Available: leitner, sm2, fsrs/);
   });
 });
