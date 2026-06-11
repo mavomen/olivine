@@ -1,5 +1,11 @@
 import blessed, { Widgets } from 'blessed';
 
+const RATING_TEXTS: Record<string, string> = {
+  leitner: '  [0-2] Wrong (demote)  [3-5] Correct (promote)',
+  sm2: '  [0] blackout  [1] incorrect  [2] hard  [3] good  [4] easy  [5] perfect',
+  fsrs: '  [0-1] forgot  [2] hard  [3] good  [4-5] easy',
+};
+
 /** State describing the current review card. */
 export interface CardState {
   title: string;
@@ -9,6 +15,7 @@ export interface CardState {
   total: number;
   remaining: number;
   box: number;
+  algorithm?: string;
 }
 
 /**
@@ -70,7 +77,7 @@ export function createCardBox(
     right: 0,
     height: 3,
     content: card.revealed
-      ? ' rating:  [0] blackout  [1] incorrect  [2] hard  [3] good  [4] easy  [5] perfect'
+      ? (card.algorithm ? RATING_TEXTS[card.algorithm] : RATING_TEXTS.sm2) ?? RATING_TEXTS.sm2
       : ' space to reveal the answer, backspace to go back to question',
     style: {
       bg: card.revealed ? 'green' : 'blue',

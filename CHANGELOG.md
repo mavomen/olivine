@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.5.0 – 2026-06-11
+
+### Added
+
+- **`olivine tui`** — landing dashboard with due count, stats, and menu
+  (`[r]` review, `[b]` browse, `[s]` stats, `[a]` add).
+- **`olivine archive`** — manually archive a card before Box 7 (`--id` or interactive).
+- **`browse --sort <field>`** — sort by `title`, `box`, `created`, or `due`.
+- **Algorithm-aware quality prompts** — review rating labels now adapt to
+  the active algorithm (Leitner: correct/wrong, SM-2: full 6-level, FSRS: 4-grade).
+- **Card-form unit tests** — 649 lines covering all editing operations
+  (insert, delete, undo, yank/paste, word motion, etc.).
+- **Performance benchmarks** — vault scan time and session generation timing.
+
+### Changed
+
+- **card-form.ts refactored** — split 745-line file into focused modules:
+  `types.ts`, `state.ts`, `render.ts`, `index.ts`.
+
+---
+
 ## v0.4.0 – 2026-06-11
 
 ### Added
