@@ -1,3 +1,5 @@
+import type { SchedulingAlgorithm, SchedulingState, SchedulingResult } from '../types';
+
 export const BOX_INTERVALS: Record<number, number> = {
   1: 1,
   2: 2,
@@ -10,36 +12,31 @@ export const BOX_INTERVALS: Record<number, number> = {
 
 export const MAX_BOX = 7;
 
-export interface LeitnerResult {
-  box: number;
-  intervalDays: number;
-  archived: boolean;
-}
-
-export function leitner(
-  quality: number,
-  currentBox: number = 1,
-): LeitnerResult {
+function schedule(quality: number, state: SchedulingState, _today: string): SchedulingResult {
   if (quality < 0 || quality > 5) {
     throw new Error(`Quality must be between 0 and 5, got ${quality}`);
   }
 
   if (quality < 3) {
-    // Wrong answer: back to Box 1
+    const box = 1;
     return {
-      box: 1,
-      intervalDays: BOX_INTERVALS[1]!,
+      box,
+      intervalDays: BOX_INTERVALS[box]!,
+      repetitions: 0,
+      easeFactor: state.easeFactor,
+      dueDate: '',
       archived: false,
     };
   }
 
-  // Correct answer: promote
-  const newBox = currentBox + 1;
+  const newBox = state.box + 1;
   if (newBox > MAX_BOX) {
-    // Graduated: archive
     return {
       box: MAX_BOX,
       intervalDays: BOX_INTERVALS[MAX_BOX]!,
+      repetitions: state.repetitions + 1,
+      easeFactor: state.easeFactor,
+      dueDate: '',
       archived: true,
     };
   }
@@ -47,6 +44,19 @@ export function leitner(
   return {
     box: newBox,
     intervalDays: BOX_INTERVALS[newBox]!,
+    repetitions: state.repetitions + 1,
+    easeFactor: state.easeFactor,
+    dueDate: '',
     archived: false,
   };
 }
+
+function initialState(): SchedulingState {
+  return { box: 1, repetitions: 0, intervalDays: BOX_INTERVALS[1]!, easeFactor: 2.5, archived: false };
+}
+
+export const leitnerAlgorithm: SchedulingAlgorithm = {
+  name: 'leitner',
+  schedule,
+  initialState,
+};

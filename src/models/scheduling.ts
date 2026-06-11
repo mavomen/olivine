@@ -9,13 +9,14 @@ export interface SchedulingRow {
   last_reviewed: string | null;
   box: number;
   archived: number;
+  algorithm: string;
 }
 
 export function insertScheduling(db: Database, row: SchedulingRow): void {
   db.run(
-    `INSERT OR REPLACE INTO scheduling (note_id, ease_factor, repetitions, interval_days, due_date, last_reviewed, box, archived)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [row.note_id, row.ease_factor, row.repetitions, row.interval_days, row.due_date, row.last_reviewed, row.box, row.archived],
+    `INSERT OR REPLACE INTO scheduling (note_id, ease_factor, repetitions, interval_days, due_date, last_reviewed, box, archived, algorithm)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [row.note_id, row.ease_factor, row.repetitions, row.interval_days, row.due_date, row.last_reviewed, row.box, row.archived, row.algorithm],
   );
 }
 

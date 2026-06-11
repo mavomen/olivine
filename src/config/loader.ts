@@ -1,16 +1,18 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { OLIVINE_DIR, CONFIG_FILENAME } from './constants';
+import { OLIVINE_DIR, CONFIG_FILENAME, DEFAULT_ALGORITHM } from './constants';
 
 export interface OlivineConfig {
   vaultPath: string;
   cardsDir: string;
+  algorithm: string;
 }
 
 export function defaultConfig(): OlivineConfig {
   return {
     vaultPath: '',
     cardsDir: '',
+    algorithm: DEFAULT_ALGORITHM,
   };
 }
 
@@ -22,6 +24,7 @@ export async function loadConfig(vaultPath: string): Promise<OlivineConfig> {
     return {
       vaultPath: parsed.vaultPath ?? vaultPath,
       cardsDir: parsed.cardsDir ?? '',
+      algorithm: parsed.algorithm ?? DEFAULT_ALGORITHM,
     };
   } catch {
     return { ...defaultConfig(), vaultPath };

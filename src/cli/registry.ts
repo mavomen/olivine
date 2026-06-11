@@ -11,6 +11,7 @@ import { buildBrowseCommand } from './browse';
 import { buildGrepCommand } from './grep';
 import { buildUnarchiveCommand } from './unarchive';
 import { buildPracticeCommand } from './practice';
+import { buildMigrateCommand } from './migrate';
 
 export function registerCommands(program: Command): void {
   program.addCommand(buildInitCommand());
@@ -25,4 +26,5 @@ export function registerCommands(program: Command): void {
   program.addCommand(buildGrepCommand());
   program.addCommand(buildUnarchiveCommand());
   program.addCommand(buildPracticeCommand());
+  program.addCommand(buildMigrateCommand());
 }

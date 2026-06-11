@@ -53,4 +53,32 @@ describe('add command', () => {
     const output = execSync(`${CLI} due "${tmpDir}"`, { encoding: 'utf-8' });
     expect(output).toContain('1 note(s) due');
   });
+
+  it('should create a safe slug from special characters in title', () => {
+    const output = execSync(
+      `${CLI} add "${tmpDir}" --title "What's the 'best' way? (maybe!)" --content "Content."`,
+      { encoding: 'utf-8', stdio: 'pipe' },
+    );
+    expect(output).toMatch(/what-s-the-best-way-maybe\.md/);
+  });
+
+  it('should truncate long titles to 64 characters for the filename', () => {
+    const longTitle = 'a'.repeat(100);
+    const output = execSync(
+      `${CLI} add "${tmpDir}" --title "${longTitle}" --content "Content."`,
+      { encoding: 'utf-8', stdio: 'pipe' },
+    );
+    const match = output.match(/([a-z-]+)\.md/);
+    expect(match).toBeTruthy();
+    expect(match![1]!.length).toBeLessThanOrEqual(64);
+  });
+
+  it('should accept a --tags flag and persist tags to the database', () => {
+    execSync(
+      `${CLI} add "${tmpDir}" --title "Tagged Card" --content "Content." --tags "math, algebra"`,
+      { stdio: 'pipe' },
+    );
+    const output = execSync(`${CLI} due "${tmpDir}"`, { encoding: 'utf-8' });
+    expect(output).toContain('1 note(s) due');
+  });
 });

@@ -9,7 +9,6 @@ describe('init command', () => {
   let tmpDir: string;
 
   beforeAll(async () => {
-    // ensure dist exists
     execSync('npm run build', { stdio: 'ignore', cwd: path.resolve(__dirname, '../..') });
   });
 
@@ -37,5 +36,26 @@ describe('init command', () => {
     execSync(`${CLI} init "${tmpDir}"`, { stdio: 'pipe' });
     const configExists = await fs.stat(path.join(tmpDir, '.olivine', 'config.json')).then(() => true, () => false);
     expect(configExists).toBe(true);
+  });
+
+  it('should accept --algo sm2 and persist it in config', async () => {
+    execSync(`${CLI} init "${tmpDir}" --algo sm2`, { stdio: 'pipe' });
+    const config = JSON.parse(
+      await fs.readFile(path.join(tmpDir, '.olivine', 'config.json'), 'utf-8'),
+    );
+    expect(config.algorithm).toBe('sm2');
+  });
+
+  it('should reject --algo with an invalid algorithm name', () => {
+    expect(() =>
+      execSync(`${CLI} init "${tmpDir}" --algo invalid_algo`, { stdio: 'pipe' }),
+    ).toThrow();
+  });
+
+  it('should be idempotent when re-initializing an existing vault', async () => {
+    execSync(`${CLI} init "${tmpDir}"`, { stdio: 'pipe' });
+    expect(() => execSync(`${CLI} init "${tmpDir}"`, { stdio: 'pipe' })).not.toThrow();
+    const dirExists = await fs.stat(path.join(tmpDir, '.olivine')).then(() => true, () => false);
+    expect(dirExists).toBe(true);
   });
 });

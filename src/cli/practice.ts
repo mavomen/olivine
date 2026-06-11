@@ -6,13 +6,15 @@ import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 import { getStats, formatStats } from '../stats/formatter';
 import { runTuiSession } from '../tui/review/runner';
+import { listAlgorithms } from '../scheduling/registry';
 
 export function buildPracticeCommand(): Command {
   return new Command('practice')
     .description('Practice cards without affecting scheduling')
     .argument('<vaultPath>', 'Path to the Obsidian vault')
     .option('--tag <tag>', 'Only practice cards with this tag')
-    .action(async (vaultPath: string, options: { tag?: string }) => {
+    .option('--algo <algorithm>', `Algorithm override (${listAlgorithms().join(', ')})`)
+    .action(async (vaultPath: string, options: { tag?: string; algo?: string }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
@@ -28,7 +30,7 @@ export function buildPracticeCommand(): Command {
         }
 
         // Run the TUI session but skip database writes
-        await runTuiSession(db, session, { dryRun: true });
+        await runTuiSession(db, session, { dryRun: true, algorithmOverride: options.algo });
 
         closeDb();
       } catch (err) {
