@@ -16,13 +16,15 @@ export function buildReviewCommand(): Command {
     .option('--tag <tag>', 'Only review cards with this tag')
     .option('--algo <algorithm>', `Algorithm override (${listAlgorithms().join(', ')})`)
     .option('--shuffle', 'Randomize card order')
-    .action(async (vaultPath: string, options: { tui?: boolean; tag?: string; algo?: string; shuffle?: boolean }) => {
+    .option('--limit <n>', 'Maximum number of cards to review')
+    .action(async (vaultPath: string, options: { tui?: boolean; tag?: string; algo?: string; shuffle?: boolean; limit?: string }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
 
-        const session = loadDueSession(db, options.tag);
+        const limit = options.limit ? parseInt(options.limit, 10) : undefined;
+        const session = loadDueSession(db, options.tag, limit);
         if (session && options.shuffle) shuffleSession(session);
         if (!session) {
           const stats = getStats(db);

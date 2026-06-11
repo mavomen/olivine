@@ -45,6 +45,7 @@ export function openStatsTui(vaultPath: string, db: Database, initialTag?: strin
   let currentTag: string | undefined = initialTag;
 
   function render() {
+    screen.children.forEach(c => c.detach());
     const stats = getStats(db, currentTag);
     const termWidth = (screen.width as number) || 80;
 

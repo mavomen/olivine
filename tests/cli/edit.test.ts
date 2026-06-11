@@ -29,4 +29,30 @@ describe('edit command', () => {
   it('should reject invalid vault path', () => {
     expect(() => execSync(`${CLI} edit /nonexistent`, { stdio: 'pipe' })).toThrow();
   });
+
+  it('should report error when --id does not match any card', async () => {
+    // First add a card so we don't hit the "no cards" early return
+    await fs.writeFile(path.join(tmpDir, 'note.md'), '# Test Note');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    expect(() => execSync(`${CLI} edit "${tmpDir}" --id nonexistent`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    })).toThrow();
+  });
+
+  it('should report error when --id matches but not a TTY', async () => {
+    await fs.writeFile(path.join(tmpDir, 'card.md'), '# Card');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const noteId = execSync(
+      `sqlite3 "${tmpDir}/.olivine/olivine.db" "SELECT id FROM notes LIMIT 1"`,
+      { encoding: 'utf-8' },
+    ).trim();
+
+    expect(() => execSync(`${CLI} edit "${tmpDir}" --id "${noteId}"`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    })).toThrow();
+  });
 });

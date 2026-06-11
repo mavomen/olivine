@@ -16,13 +16,15 @@ export function buildPracticeCommand(): Command {
     .option('--tag <tag>', 'Only practice cards with this tag')
     .option('--algo <algorithm>', `Algorithm override (${listAlgorithms().join(', ')})`)
     .option('--shuffle', 'Randomize card order')
-    .action(async (vaultPath: string, options: { tag?: string; algo?: string; shuffle?: boolean }) => {
+    .option('--limit <n>', 'Maximum number of cards to practice')
+    .action(async (vaultPath: string, options: { tag?: string; algo?: string; shuffle?: boolean; limit?: string }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
 
-        const session = loadDueSession(db, options.tag);
+        const limit = options.limit ? parseInt(options.limit, 10) : undefined;
+        const session = loadDueSession(db, options.tag, limit);
         if (session && options.shuffle) shuffleSession(session);
         if (!session) {
           const stats = getStats(db);

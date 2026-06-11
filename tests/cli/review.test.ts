@@ -62,4 +62,19 @@ describe('review command', () => {
 
     expect(output).toBeDefined();
   });
+
+  it('should cap session size with --limit flag', async () => {
+    await fs.writeFile(path.join(tmpDir, 'note1.md'), '# Note 1');
+    await fs.writeFile(path.join(tmpDir, 'note2.md'), '# Note 2');
+    await fs.writeFile(path.join(tmpDir, 'note3.md'), '# Note 3');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const output = execSync(`${CLI} review "${tmpDir}" --tui --limit 1`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+      timeout: 5000,
+    });
+
+    expect(output).toContain('2 more card(s) due today.');
+  });
 });

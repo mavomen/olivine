@@ -51,5 +51,8 @@ export async function runReviewSession(
   console.log(chalk.white(`Reviewed: ${stats.reviewed}/${stats.total}`));
   console.log(chalk.red(`Failed:   ${stats.failed}`));
   console.log(chalk.gray(`Duration: ${minutes}m ${seconds}s`));
+  if (session.remainingDue > 0) {
+    console.log(chalk.yellow(`${session.remainingDue} more card(s) due today.`));
+  }
   console.log();
 }

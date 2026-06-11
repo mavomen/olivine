@@ -80,4 +80,14 @@ describe('session state', () => {
     const duration = sessionDuration(session);
     expect(duration).toBeGreaterThanOrEqual(0);
   });
+
+  it('should default remainingDue to 0', () => {
+    const session = createSession(notes);
+    expect(session.remainingDue).toBe(0);
+  });
+
+  it('should accept remainingDue parameter', () => {
+    const session = createSession(notes, 5);
+    expect(session.remainingDue).toBe(5);
+  });
 });

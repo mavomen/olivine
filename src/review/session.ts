@@ -13,9 +13,10 @@ export interface ReviewSession {
   notes: SessionNote[];
   currentIndex: number;
   startedAt: Date;
+  remainingDue: number;
 }
 
-export function createSession(notes: NoteRow[]): ReviewSession {
+export function createSession(notes: NoteRow[], remainingDue: number = 0): ReviewSession {
   return {
     phase: 'loading',
     notes: notes.map((note) => ({
@@ -25,6 +26,7 @@ export function createSession(notes: NoteRow[]): ReviewSession {
     })),
     currentIndex: 0,
     startedAt: new Date(),
+    remainingDue,
   };
 }
 

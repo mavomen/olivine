@@ -127,4 +127,28 @@ describe('runFallback (non-TTY path)', () => {
 
     expect(applyReview).toHaveBeenCalledWith(db, 'a', 4, expect.any(String), 'sm2');
   });
+
+  it('should print remaining due count in fallback when remainingDue > 0', async () => {
+    process.stdout.isTTY = false;
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const notes = [makeNote('a', 'A'), makeNote('b', 'B')];
+    const session = createSession(notes, 3);
+
+    await runTuiSession(db, session, {});
+
+    expect(consoleSpy).toHaveBeenCalledWith('3 more card(s) due today.');
+    consoleSpy.mockRestore();
+  });
+
+  it('should not print remaining due when remainingDue is 0', async () => {
+    process.stdout.isTTY = false;
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const notes = [makeNote('a', 'A')];
+    const session = createSession(notes, 0);
+
+    await runTuiSession(db, session, {});
+
+    expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('more card(s) due today.'));
+    consoleSpy.mockRestore();
+  });
 });
