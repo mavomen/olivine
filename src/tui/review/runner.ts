@@ -91,6 +91,9 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
       const minutes = Math.floor(duration / 60000);
       const seconds = Math.floor((duration % 60000) / 1000);
       const label = options.dryRun ? ' Practice Complete' : ' Session Complete';
+      const remainingLines = session.remainingDue > 0
+        ? [`${session.remainingDue} more card(s) due today`]
+        : [];
 
       const container = blessed.box({
         parent: screen,
@@ -112,6 +115,7 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
           label,
           ` Reviewed: ${stats.reviewed}/${stats.total}    Failed: ${stats.failed}`,
           ` Duration: ${minutes}m ${seconds}s${options.dryRun ? ' (practice)' : ''}`,
+          ...remainingLines,
         ].join('\n'),
         style: { bold: true },
       });
@@ -189,4 +193,7 @@ async function runFallback(db: Database, session: ReviewSession, options: TuiOpt
     session.currentIndex++;
   }
   session.phase = 'summary';
+  if (session.remainingDue > 0) {
+    console.log(`${session.remainingDue} more card(s) due today.`);
+  }
 }

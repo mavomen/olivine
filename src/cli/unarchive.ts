@@ -9,7 +9,9 @@ export function buildUnarchiveCommand(): Command {
   return new Command('unarchive')
     .description('Bring an archived card back into rotation')
     .argument('<vaultPath>', 'Path to the Obsidian vault')
-    .action(async (vaultPath: string) => {
+    .option('--all', 'Unarchive all archived cards')
+    .option('--id <noteId>', 'Unarchive a specific card by ID')
+    .action(async (vaultPath: string, options: { all?: boolean; id?: string }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
@@ -24,6 +26,37 @@ export function buildUnarchiveCommand(): Command {
           console.log('No archived cards.');
           closeDb();
           return;
+        }
+
+        const today = todayISO();
+        const isTty = !!process.stdout.isTTY;
+
+        if (options.all) {
+          db.run(
+            `UPDATE scheduling SET archived = 0, box = 1, due_date = ?, interval_days = 1, repetitions = 0 WHERE archived = 1`,
+            [today]
+          );
+          saveDb(vaultPath);
+          closeDb();
+          console.log(`All archived cards unarchived and reset to Box 1.`);
+          return;
+        }
+
+        if (options.id) {
+          db.run(
+            'UPDATE scheduling SET archived = 0, box = 1, due_date = ?, interval_days = 1, repetitions = 0 WHERE note_id = ? AND archived = 1',
+            [today, options.id]
+          );
+          saveDb(vaultPath);
+          closeDb();
+          console.log(`Card unarchived and reset to Box 1.`);
+          return;
+        }
+
+        if (!isTty) {
+          throw new Error(
+            'Interactive mode requires a TTY. Use --id <noteId> to unarchive a specific card, or --all to unarchive everything.'
+          );
         }
 
         const { default: inquirer } = await import('inquirer');
@@ -50,7 +83,6 @@ export function buildUnarchiveCommand(): Command {
           return;
         }
 
-        const today = todayISO();
         db.run(
           'UPDATE scheduling SET archived = 0, box = 1, due_date = ?, interval_days = 1, repetitions = 0 WHERE note_id = ?',
           [today, noteId]

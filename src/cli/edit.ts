@@ -13,7 +13,8 @@ export function buildEditCommand(): Command {
   return new Command('edit')
     .description('Edit an existing card')
     .argument('<vaultPath>', 'Path to the Obsidian vault')
-    .action(async (vaultPath: string) => {
+    .option('--id <noteId>', 'Edit a specific card by ID')
+    .action(async (vaultPath: string, options: { id?: string }) => {
       try {
         await validateVaultPath(vaultPath);
         const config = await loadConfig(vaultPath);
@@ -27,15 +28,33 @@ export function buildEditCommand(): Command {
           return;
         }
 
-        const { default: inquirer } = await import('inquirer');
-        const { noteId } = await inquirer.prompt([{
-          type: 'list', name: 'noteId', message: 'Select a card to edit:',
-          choices: notes.map(n => ({ name: n.title, value: n.id })),
-          pageSize: 15,
-        }]);
+        const isTty = !!process.stdout.isTTY;
+
+        let noteId: string | undefined;
+
+        if (options.id) {
+          noteId = options.id;
+          const found = notes.find(n => n.id === noteId);
+          if (!found) {
+            throw new Error(`Card not found: ${noteId}`);
+          }
+          if (!isTty) {
+            throw new Error('Card editor requires a TTY. Use a TTY session to edit cards.');
+          }
+        } else if (isTty) {
+          const { default: inquirer } = await import('inquirer');
+          const { selected } = await inquirer.prompt([{
+            type: 'list', name: 'selected', message: 'Select a card to edit:',
+            choices: notes.map(n => ({ name: n.title, value: n.id })),
+            pageSize: 15,
+          }]);
+          noteId = selected;
+        } else {
+          throw new Error('Interactive mode requires a TTY. Use --id <noteId> to specify a card.');
+        }
 
         const note = notes.find(n => n.id === noteId);
-        if (!note) { closeDb(); return; }
+        if (!note) { closeDb(); throw new Error(`Card not found: ${noteId}`); }
 
         const existingTags = (() => {
           try { return JSON.parse(note.tags || '[]').join(', '); }
