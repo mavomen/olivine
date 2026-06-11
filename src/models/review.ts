@@ -57,6 +57,20 @@ export function getTotalReviewCount(db: Database): number {
   return 0;
 }
 
+export function getAllReviews(db: Database): ReviewRow[] {
+  return queryReviews(db, 'SELECT * FROM reviews ORDER BY reviewed_at ASC', []);
+}
+
+export function insertReviewWithId(db: Database, id: string, noteId: string, quality: number, reviewedAt: string): ReviewRow {
+  db.run('INSERT OR REPLACE INTO reviews (id, note_id, quality, reviewed_at) VALUES (?, ?, ?, ?)', [
+    id,
+    noteId,
+    quality,
+    reviewedAt,
+  ]);
+  return { id, note_id: noteId, quality, reviewed_at: reviewedAt };
+}
+
 export function deleteReviewsForNote(db: Database, noteId: string): void {
   db.run('DELETE FROM reviews WHERE note_id = ?', [noteId]);
 }
