@@ -61,6 +61,7 @@ export function buildInitCommand(): Command {
         closeDb();
 
         const config = defaultConfig();
+        config.vaultPath = vaultPath;
         config.algorithm = algorithm;
         config.cardsDir = cardsDir;
         await saveConfig(vaultPath, config);

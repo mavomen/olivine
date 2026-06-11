@@ -4,13 +4,13 @@ import { getStats, type StatsSnapshot } from '../../stats/formatter';
 
 const BAR_CHARS = '█';
 
-function renderBar(maxVal: number, count: number, width: number): string {
+export function renderBar(maxVal: number, count: number, width: number): string {
   if (maxVal === 0) return '';
   const filled = Math.round((count / maxVal) * width);
   return BAR_CHARS.repeat(Math.max(filled, count > 0 ? 1 : 0));
 }
 
-function buildContent(stats: StatsSnapshot, termWidth: number): string {
+export function buildContent(stats: StatsSnapshot, termWidth: number): string {
   const maxCount = Math.max(...Object.values(stats.boxDistribution), 1);
   const barWidth = Math.max(10, termWidth - 30);
 
