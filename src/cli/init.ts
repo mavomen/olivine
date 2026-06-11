@@ -11,10 +11,12 @@ import { listAlgorithms } from '../scheduling/registry';
 export function buildInitCommand(): Command {
   return new Command('init')
     .description('Initialize Olivine in a vault directory')
-    .argument('<vaultPath>', 'Path to the Obsidian vault')
+    .argument('[vaultPath]', 'Path to the Obsidian vault (defaults to current directory)')
     .option('--algo <algorithm>', `Algorithm to use (${listAlgorithms().join(', ')})`)
-    .action(async (vaultPath: string, options: { algo?: string }) => {
+    .action(async (vaultPath: string | undefined, options: { algo?: string }) => {
       try {
+        vaultPath = vaultPath || process.cwd();
+        console.log(`  Using vault: ${vaultPath}`);
         await validateVaultPath(vaultPath);
 
         let algorithm: string;

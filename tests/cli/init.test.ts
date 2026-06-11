@@ -3,13 +3,14 @@ import path from 'node:path';
 import os from 'node:os';
 import { execSync } from 'node:child_process';
 
-const CLI = 'node dist/index.js';
+const PROJECT_ROOT = path.resolve(__dirname, '../..');
+const CLI = `node ${path.join(PROJECT_ROOT, 'dist/index.js')}`;
 
 describe('init command', () => {
   let tmpDir: string;
 
   beforeAll(async () => {
-    execSync('npm run build', { stdio: 'ignore', cwd: path.resolve(__dirname, '../..') });
+    execSync('npm run build', { stdio: 'ignore', cwd: PROJECT_ROOT });
   });
 
   beforeEach(async () => {
@@ -55,6 +56,12 @@ describe('init command', () => {
   it('should be idempotent when re-initializing an existing vault', async () => {
     execSync(`${CLI} init "${tmpDir}"`, { stdio: 'pipe' });
     expect(() => execSync(`${CLI} init "${tmpDir}"`, { stdio: 'pipe' })).not.toThrow();
+    const dirExists = await fs.stat(path.join(tmpDir, '.olivine')).then(() => true, () => false);
+    expect(dirExists).toBe(true);
+  });
+
+  it('should use current directory when vault path is omitted', async () => {
+    execSync(`${CLI} init`, { stdio: 'pipe', cwd: tmpDir });
     const dirExists = await fs.stat(path.join(tmpDir, '.olivine')).then(() => true, () => false);
     expect(dirExists).toBe(true);
   });
