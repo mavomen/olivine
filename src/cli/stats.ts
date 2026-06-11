@@ -10,14 +10,21 @@ export function buildStatsCommand(): Command {
     .description('Display learning statistics')
     .argument('<vaultPath>', 'Path to the Obsidian vault')
     .option('--tag <tag>', 'Filter statistics by tag')
-    .action(async (vaultPath: string, options: { tag?: string }) => {
+    .option('--tui', 'Open the statistics dashboard (blessed TUI)')
+    .action(async (vaultPath: string, options: { tag?: string; tui?: boolean }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
-        const stats = getStats(db, options.tag);
-        console.log(formatStats(stats));
-        closeDb();
+
+        if (options.tui) {
+          const { openStatsTui } = await import('../tui/stats/index');
+          openStatsTui(vaultPath, db, options.tag);
+        } else {
+          const stats = getStats(db, options.tag);
+          console.log(formatStats(stats));
+          closeDb();
+        }
       } catch (err) {
         handleError('Stats failed', err);
       }

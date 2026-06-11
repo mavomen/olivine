@@ -6,6 +6,7 @@ export interface CardState {
   revealed: boolean;
   index: number;
   total: number;
+  remaining: number;
   box: number;
 }
 
@@ -23,7 +24,7 @@ export function createCardBox(
     width: '80%',
     height: '70%',
     border: 'line',
-    label: ` Card no. ${card.index} of ${card.total} — Box ${card.box} `,
+    label: ` Card no. ${card.index} of ${card.total} — ${card.remaining} remaining — Box ${card.box} `,
     style: {
       border: { fg: 'cyan' },
       focus: { border: { fg: 'green' } },
