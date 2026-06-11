@@ -9,6 +9,7 @@ const LOG_LEVELS: Record<LogLevel, number> = {
 
 let currentLevel: LogLevel = 'info';
 
+/** Set the minimum log level. Messages below this threshold are suppressed. */
 export function setLogLevel(level: LogLevel): void {
   currentLevel = level;
 }
@@ -21,6 +22,7 @@ function timestamp(): string {
   return new Date().toISOString();
 }
 
+/** Default application logger with level-based filtering. */
 export const logger = {
   info(message: string): void {
     if (shouldLog('info')) {

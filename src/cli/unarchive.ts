@@ -5,6 +5,7 @@ import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 import { todayISO } from '../utils/date';
 
+/** Build and return the `unarchive` CLI command for restoring archived cards into rotation. */
 export function buildUnarchiveCommand(): Command {
   return new Command('unarchive')
     .description('Bring an archived card back into rotation')

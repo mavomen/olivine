@@ -1,5 +1,6 @@
 import type { SchedulingAlgorithm, SchedulingState, SchedulingResult } from '../types';
 
+/** SM-2 algorithm default parameters. */
 export const SM2_DEFAULTS = {
   INITIAL_EASE_FACTOR: 2.5,
   MIN_EASE_FACTOR: 1.3,
@@ -66,6 +67,7 @@ function initialState(): SchedulingState {
   return { box: 1, repetitions: 0, intervalDays: 1, easeFactor: SM2_DEFAULTS.INITIAL_EASE_FACTOR, archived: false, stability: 0, difficulty: 5, lastReviewDate: null };
 }
 
+/** SM-2 algorithm: ease-factor based intervals with graduated repetition schedule. */
 export const sm2Algorithm: SchedulingAlgorithm = {
   name: 'sm2',
   schedule,

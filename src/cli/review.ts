@@ -8,6 +8,7 @@ import { validateVaultPath } from '../utils/validation';
 import { getStats, formatStats } from '../stats/formatter';
 import { listAlgorithms } from '../scheduling/registry';
 
+/** Build and return the `review` CLI command for interactive review sessions. */
 export function buildReviewCommand(): Command {
   return new Command('review')
     .description('Start an interactive review session')

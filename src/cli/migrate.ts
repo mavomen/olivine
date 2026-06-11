@@ -8,6 +8,7 @@ import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 import { todayISO } from '../utils/date';
 
+/** Build and return the `migrate` CLI command for migrating cards between algorithms. */
 export function buildMigrateCommand(): Command {
   return new Command('migrate')
     .description('Migrate cards from one algorithm to another')

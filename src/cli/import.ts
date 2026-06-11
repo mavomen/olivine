@@ -27,6 +27,7 @@ interface ImportPayload {
   notes: ImportNote[];
 }
 
+/** Build and return the `import` CLI command for importing cards from a JSON export file. */
 export function buildImportCommand(): Command {
   return new Command('import')
     .description('Import cards from a JSON export file')

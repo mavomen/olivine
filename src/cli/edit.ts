@@ -9,6 +9,7 @@ import { validateVaultPath } from '../utils/validation';
 import { getAllNotes, getNoteById, insertNote } from '../models/note';
 import { todayISO } from '../utils/date';
 
+/** Build and return the `edit` CLI command for editing existing cards. */
 export function buildEditCommand(): Command {
   return new Command('edit')
     .description('Edit an existing card')

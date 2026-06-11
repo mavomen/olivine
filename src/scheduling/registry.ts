@@ -9,12 +9,22 @@ const registry = new Map<string, SchedulingAlgorithm>([
   ['fsrs', fsrsAlgorithm],
 ]);
 
+/**
+ * Looks up a scheduling algorithm by name.
+ * @param name - Algorithm name (e.g. 'leitner', 'sm2', 'fsrs')
+ * @returns The matching SchedulingAlgorithm
+ * @throws If the algorithm name is unknown
+ */
 export function getAlgorithm(name: string): SchedulingAlgorithm {
   const algo = registry.get(name);
   if (!algo) throw new Error(`Unknown scheduling algorithm: "${name}". Available: ${listAlgorithms().join(', ')}`);
   return algo;
 }
 
+/**
+ * Returns the names of all registered algorithms.
+ * @returns Array of algorithm name strings
+ */
 export function listAlgorithms(): string[] {
   return Array.from(registry.keys());
 }

@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
+/** Return true if the path points to an existing directory. */
 export async function directoryExists(dirPath: string): Promise<boolean> {
   try {
     const stat = await fs.stat(dirPath);
@@ -10,6 +11,7 @@ export async function directoryExists(dirPath: string): Promise<boolean> {
   }
 }
 
+/** Return true if the path points to an existing file. */
 export async function fileExists(filePath: string): Promise<boolean> {
   try {
     const stat = await fs.stat(filePath);
@@ -19,10 +21,12 @@ export async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
+/** Ensure a directory exists, creating it (and parents) if needed. */
 export async function ensureDir(dirPath: string): Promise<void> {
   await fs.mkdir(dirPath, { recursive: true });
 }
 
+/** Recursively read all files under a directory, skipping directories in `ignoreDirs`. */
 export async function readDirRecursive(
   dirPath: string,
   ignoreDirs: Set<string> = new Set(),

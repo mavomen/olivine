@@ -9,6 +9,7 @@ import { deleteScheduling } from '../models/scheduling';
 import type { NoteRow } from '../models/note';
 import { logger } from '../utils/logger';
 
+/** Scan the vault on disk and reconcile notes with the database — adding new notes and removing deleted ones. */
 export async function syncVault(vaultPath: string, db: Database): Promise<{ added: number; removed: number }> {
   const scannedFiles = await scanVault(vaultPath);
   const existingNotes = getAllNotes(db);

@@ -7,6 +7,7 @@ import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 import { listAlgorithms } from '../scheduling/registry';
 
+/** Build and return the `init` CLI command for initializing Olivine in a vault directory. */
 export function buildInitCommand(): Command {
   return new Command('init')
     .description('Initialize Olivine in a vault directory')

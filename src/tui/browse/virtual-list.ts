@@ -1,11 +1,13 @@
 import blessed, { Widgets } from 'blessed';
 
+/** A single row in the virtual list. */
 export interface VirtualListRow {
   label: string;
   data: unknown;
   style?: { fg?: string; bg?: string };
 }
 
+/** Configuration options for creating a virtual list. */
 export interface VirtualListOptions {
   parent: Widgets.Node;
   top: number;
@@ -16,6 +18,7 @@ export interface VirtualListOptions {
   onSelect?: (row: VirtualListRow, index: number) => void;
 }
 
+/** Public API returned by createVirtualList. */
 export interface VirtualListHandle {
   box: Widgets.BoxElement;
   setRows: (rows: VirtualListRow[]) => void;
@@ -26,6 +29,11 @@ export interface VirtualListHandle {
   onSelect?: (row: VirtualListRow, index: number) => void;
 }
 
+/**
+ * Create a virtual list widget with keyboard navigation.
+ * @param options - Configuration for the list.
+ * @returns A handle with methods to control the list.
+ */
 export function createVirtualList(options: VirtualListOptions): VirtualListHandle {
   const box = blessed.box({
     parent: options.parent,

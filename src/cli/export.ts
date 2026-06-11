@@ -7,6 +7,7 @@ import { getReviewsForNote } from '../models/review';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 
+/** Build and return the `export` CLI command for exporting cards to JSON. */
 export function buildExportCommand(): Command {
   return new Command('export')
     .description('Export all cards to JSON')

@@ -6,6 +6,14 @@ import { insertReview } from '../models/review';
 import { applyReview } from '../scheduling/service';
 import { todayISO } from '../utils/date';
 
+/**
+ * Runs the full review session loop: displays notes, collects quality ratings,
+ * records reviews, and shows a summary at the end.
+ * @param db - SQLite database instance
+ * @param session - The review session to run
+ * @param algorithmOverride - Optional algorithm name to use instead of the stored one
+ * @param qualityOverride - Optional quality override for non-interactive review
+ */
 export async function runReviewSession(
   db: Database,
   session: ReviewSession,
@@ -36,15 +44,13 @@ export async function runReviewSession(
     applyReview(db, sn.note.id, quality, today, algorithmOverride);
 
     advanceNote(session);
-    console.log(); // spacing
+    console.log();
 
-    // If we've reviewed all notes, transition to summary
     if (session.currentIndex >= session.notes.length) {
       session.phase = 'summary';
     }
   }
 
-  // Session summary
   const stats = sessionStats(session);
   const duration = sessionDuration(session);
   const minutes = Math.floor(duration / 60000);

@@ -8,6 +8,7 @@ import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 import chalk from 'chalk';
 
+/** Build and return the `browse` CLI command for viewing cards. */
 export function buildBrowseCommand(): Command {
   return new Command('browse')
     .description('Browse cards')
@@ -59,7 +60,6 @@ export function buildBrowseCommand(): Command {
             return;
           }
 
-          // TTY: enter interactive detail view
           let viewing = true;
           const { default: inquirer } = await import('inquirer');
           while (viewing) {

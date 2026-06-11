@@ -1,5 +1,6 @@
 import type { SchedulingAlgorithm, SchedulingState, SchedulingResult } from '../types';
 
+/** Leitner box intervals in days. Box 1 = 1 day, Box 7 = 64 days. */
 export const BOX_INTERVALS: Record<number, number> = {
   1: 1,
   2: 2,
@@ -10,6 +11,7 @@ export const BOX_INTERVALS: Record<number, number> = {
   7: 64,
 };
 
+/** Maximum number of Leitner boxes. */
 export const MAX_BOX = 7;
 
 function schedule(quality: number, state: SchedulingState, _today: string): SchedulingResult {
@@ -61,6 +63,7 @@ function initialState(): SchedulingState {
   return { box: 1, repetitions: 0, intervalDays: BOX_INTERVALS[1]!, easeFactor: 2.5, archived: false, stability: 0, difficulty: 5, lastReviewDate: null };
 }
 
+/** Leitner algorithm: graduated 7-box intervals with fail-reset to box 1. */
 export const leitnerAlgorithm: SchedulingAlgorithm = {
   name: 'leitner',
   schedule,

@@ -1,5 +1,6 @@
 import blessed, { Widgets } from 'blessed';
 
+/** State describing the current review card. */
 export interface CardState {
   title: string;
   content: string;
@@ -10,6 +11,16 @@ export interface CardState {
   box: number;
 }
 
+/**
+ * Create a blessed box element displaying a review card with keyboard controls.
+ * @param screen - The blessed screen.
+ * @param card - Card content and state.
+ * @param onReveal - Called when the user reveals the answer.
+ * @param onUnreveal - Called when the user goes back to the question.
+ * @param onRate - Called with the quality rating (0-5) when the user rates.
+ * @param onQuit - Called when the user quits the review.
+ * @returns The created box element.
+ */
 export function createCardBox(
   screen: Widgets.Screen,
   card: CardState,

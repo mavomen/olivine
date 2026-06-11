@@ -18,6 +18,11 @@ interface BrowseState {
   listRows: VirtualListRow[];
 }
 
+/**
+ * Open the interactive browse TUI for viewing and managing cards.
+ * @param vaultPath - Path to the vault for database persistence.
+ * @param db - The database instance.
+ */
 export function openBrowseTui(vaultPath: string, db: Database): void {
   if (!process.stdout.isTTY) {
     throw new Error('TUI browser requires a TTY.');
@@ -31,8 +36,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     title: 'Olivine — Browse Cards',
     dockBorders: false,
   });
-
-  // Load data
   const notes = getAllNotes(db);
   const scheduling = getAllScheduling(db);
   const schedMap = new Map<string, SchedulingRow>();
@@ -86,7 +89,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
 
   updateFilteredList();
 
-  // ── Layout ──────────────────────────────────────────────────────────────────
 
   blessed.box({
     parent: screen,
@@ -138,7 +140,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     },
   });
 
-  // ── Detail renderer ──────────────────────────────────────────────────────────
 
   function renderDetail(note: NoteRow) {
     const s = schedMap.get(note.id);
@@ -177,7 +178,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     renderDetail(state.listRows[0]!.data as NoteRow);
   }
 
-  // ── Helper: destroy screen then run callback on next tick ────────────────────
   // This prevents keypresses from the current screen bleeding into the next
   // blessed screen (the root cause of the jjjkk leak into the add form buffer).
   function transitionTo(fn: () => void) {
@@ -189,7 +189,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     setTimeout(fn, 50);
   }
 
-  // ── Keybindings ──────────────────────────────────────────────────────────────
 
   screen.key(['j', 'down'], () => {
     list.moveSelection(1);
@@ -273,7 +272,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     });
   });
 
-  // ── Enter: edit selected card ─────────────────────────────────────────────────
 
   screen.key(['enter'], () => {
     const idx = list.getSelectedIndex();
@@ -311,7 +309,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     });
   });
 
-  // ── a: add new card ───────────────────────────────────────────────────────────
 
   screen.key(['a'], () => {
     transitionTo(() => {
@@ -342,7 +339,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     });
   });
 
-  // ── d: delete card ────────────────────────────────────────────────────────────
 
   screen.key(['d'], () => {
     const idx = list.getSelectedIndex();
@@ -371,7 +367,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     });
   });
 
-  // ── h: review history ─────────────────────────────────────────────────────────
 
   screen.key(['h'], () => {
     const idx = list.getSelectedIndex();
@@ -390,14 +385,13 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     screen.render();
   });
 
-  // ── q: quit ───────────────────────────────────────────────────────────────────
   // screen.destroy() alone leaves the process alive if there are pending async
   // ops (the db connection, blessed internals). We also restore the cursor and
   // explicitly end the process.
 
   screen.key(['q', 'C-c'], () => {
     screen.destroy();
-    process.stdout.write('\x1b[?25h'); // restore cursor visibility
+    process.stdout.write('\x1b[?25h');
     process.exit(0);
   });
 
