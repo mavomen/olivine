@@ -18,7 +18,8 @@ export function buildBrowseCommand(): Command {
     .option('--tui', 'Open full‑screen TUI browser')
     .option('--id <noteId>', 'Show a specific card by ID')
     .option('--json', 'Output card data as JSON (requires --id)')
-    .action(async (vaultPath: string, options: { all?: boolean; tag?: string; tui?: boolean; id?: string; json?: boolean }) => {
+    .option('--sort <field>', 'Sort order: title, box, created, due')
+    .action(async (vaultPath: string, options: { all?: boolean; tag?: string; tui?: boolean; id?: string; json?: boolean; sort?: string }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
@@ -110,6 +111,22 @@ export function buildBrowseCommand(): Command {
 
         const activeNoteIds = new Set(scheduling.filter(s => s.archived === 0).map(s => s.note_id));
         const displayNotes = allNotes.filter(n => activeNoteIds.has(n.id) || (options.all && archivedIds.has(n.id)));
+
+        if (options.sort) {
+          const sortField = options.sort;
+          displayNotes.sort((a, b) => {
+            if (sortField === 'box') {
+              return (schedMap.get(a.id)?.box ?? 0) - (schedMap.get(b.id)?.box ?? 0);
+            }
+            if (sortField === 'created') {
+              return a.created_at.localeCompare(b.created_at);
+            }
+            if (sortField === 'due') {
+              return (schedMap.get(a.id)?.due_date ?? '').localeCompare(schedMap.get(b.id)?.due_date ?? '');
+            }
+            return a.title.localeCompare(b.title);
+          });
+        }
 
         if (displayNotes.length === 0) {
           console.log('No cards to display.');
