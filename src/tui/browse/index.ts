@@ -1,10 +1,12 @@
 import blessed from 'blessed';
 import { Database } from 'sql.js';
-import { getAllNotes, NoteRow } from '../../models/note';
+import { getAllNotes, insertNote, deleteNoteByPath, NoteRow } from '../../models/note';
 import { getAllScheduling, SchedulingRow } from '../../models/scheduling';
 import { getReviewsForNote } from '../../models/review';
 import { createVirtualList, VirtualListRow } from './virtual-list';
-import { AddCardResult } from '../card-form';
+import { showAddCardForm, AddCardResult } from '../card-form';
+import { saveDb } from '../../database/connection';
+import { initializeScheduling } from '../../scheduling/service';
 import chalk from 'chalk';
 
 interface BrowseState {
@@ -280,12 +282,9 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     })();
 
     transitionTo(() => {
-      const { showAddCardForm } = require('../session/tui-add');
       showAddCardForm(
         'vault root',
         (result: AddCardResult) => {
-          const { insertNote } = require('../models/note');
-          const { saveDb } = require('../database/connection');
           insertNote(db, {
             id: note.id,
             path: note.path,
@@ -313,13 +312,9 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
 
   screen.key(['a'], () => {
     transitionTo(() => {
-      const { showAddCardForm } = require('../session/tui-add');
       showAddCardForm(
         'vault root',
         (result: AddCardResult) => {
-          const { insertNote } = require('../models/note');
-          const { initializeScheduling } = require('../scheduling/service');
-          const { saveDb } = require('../database/connection');
           const slug = result.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 64);
           const id = slug + '.md';
           const today = new Date().toISOString().split('T')[0]!;
@@ -363,8 +358,6 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
 
     prompt.ask(`Delete "${note.title}"? (y/N):`, (err: Error | null, value: string) => {
       if (value?.toLowerCase() === 'y') {
-        const { deleteNoteByPath } = require('../models/note');
-        const { saveDb } = require('../database/connection');
         deleteNoteByPath(db, note.path);
         saveDb(vaultPath);
         screen.destroy();

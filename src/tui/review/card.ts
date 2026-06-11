@@ -58,7 +58,7 @@ export function createCardBox(
     right: 0,
     height: 3,
     content: card.revealed
-      ? ' rating:  [0] blackout  [1] incorrect  [2] hard  [3] good  [4] easy'
+      ? ' rating:  [0] blackout  [1] incorrect  [2] hard  [3] good  [4] easy  [5] perfect'
       : ' space to reveal the answer, backspace to go back to question',
     style: {
       bg: card.revealed ? 'green' : 'blue',
@@ -80,7 +80,7 @@ export function createCardBox(
     }
   });
 
-  box.key(['0', '1', '2', '3', '4'], (ch: string) => {
+  box.key(['0', '1', '2', '3', '4', '5'], (ch: string) => {
     if (card.revealed) {
       const quality = parseInt(ch, 10);
       onRate(quality);

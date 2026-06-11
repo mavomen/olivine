@@ -56,3 +56,7 @@ export function getTotalReviewCount(db: Database): number {
   stmt.free();
   return 0;
 }
+
+export function deleteReviewsForNote(db: Database, noteId: string): void {
+  db.run('DELETE FROM reviews WHERE note_id = ?', [noteId]);
+}
