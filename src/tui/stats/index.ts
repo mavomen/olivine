@@ -4,12 +4,25 @@ import { getStats, type StatsSnapshot } from '../../stats/formatter';
 
 const BAR_CHARS = '█';
 
+/**
+ * Render a horizontal bar for a stats display.
+ * @param maxVal - The maximum value for scaling.
+ * @param count - The current value.
+ * @param width - The width of the bar in characters.
+ * @returns A string of block characters representing the bar.
+ */
 export function renderBar(maxVal: number, count: number, width: number): string {
   if (maxVal === 0) return '';
   const filled = Math.round((count / maxVal) * width);
   return BAR_CHARS.repeat(Math.max(filled, count > 0 ? 1 : 0));
 }
 
+/**
+ * Build a multi-line string displaying stats with bar charts.
+ * @param stats - The stats snapshot to display.
+ * @param termWidth - Terminal width for formatting.
+ * @returns Formatted stats string.
+ */
 export function buildContent(stats: StatsSnapshot, termWidth: number): string {
   const maxCount = Math.max(...Object.values(stats.boxDistribution), 1);
   const barWidth = Math.max(10, termWidth - 30);
@@ -33,6 +46,12 @@ export function buildContent(stats: StatsSnapshot, termWidth: number): string {
   ].join('\n');
 }
 
+/**
+ * Open a blessed-based TUI showing card statistics.
+ * @param vaultPath - Path to the vault for database saving.
+ * @param db - The database instance.
+ * @param initialTag - Optional tag to filter stats by.
+ */
 export function openStatsTui(vaultPath: string, db: Database, initialTag?: string): void {
   if (!process.stdout.isTTY) {
     throw new Error('TUI stats requires a TTY.');

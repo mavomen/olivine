@@ -1,6 +1,7 @@
 import { Database } from 'sql.js';
 import { v4 as uuidv4 } from 'uuid';
 
+/** A row from the `reviews` table. */
 export interface ReviewRow {
   id: string;
   note_id: string;
@@ -8,6 +9,7 @@ export interface ReviewRow {
   reviewed_at: string;
 }
 
+/** Insert a new review and return the created row. */
 export function insertReview(db: Database, noteId: string, quality: number, reviewedAt: string): ReviewRow {
   const id = uuidv4();
   db.run('INSERT INTO reviews (id, note_id, quality, reviewed_at) VALUES (?, ?, ?, ?)', [
@@ -30,10 +32,12 @@ function queryReviews(db: Database, sql: string, params: unknown[]): ReviewRow[]
   return rows;
 }
 
+/** Return all reviews for a note, most recent first. */
 export function getReviewsForNote(db: Database, noteId: string): ReviewRow[] {
   return queryReviews(db, 'SELECT * FROM reviews WHERE note_id = ? ORDER BY reviewed_at DESC', [noteId]);
 }
 
+/** Count reviews recorded on a specific date string. */
 export function getReviewCountToday(db: Database, today: string): number {
   const stmt = db.prepare('SELECT COUNT(*) as count FROM reviews WHERE reviewed_at = ?');
   stmt.bind([today]);
@@ -46,6 +50,7 @@ export function getReviewCountToday(db: Database, today: string): number {
   return 0;
 }
 
+/** Count every review across all notes. */
 export function getTotalReviewCount(db: Database): number {
   const stmt = db.prepare('SELECT COUNT(*) as count FROM reviews');
   if (stmt.step()) {
@@ -57,10 +62,12 @@ export function getTotalReviewCount(db: Database): number {
   return 0;
 }
 
+/** Return every review, ordered chronologically. */
 export function getAllReviews(db: Database): ReviewRow[] {
   return queryReviews(db, 'SELECT * FROM reviews ORDER BY reviewed_at ASC', []);
 }
 
+/** Insert a review with a specific id (useful for syncing). */
 export function insertReviewWithId(db: Database, id: string, noteId: string, quality: number, reviewedAt: string): ReviewRow {
   db.run('INSERT OR REPLACE INTO reviews (id, note_id, quality, reviewed_at) VALUES (?, ?, ?, ?)', [
     id,
@@ -71,6 +78,7 @@ export function insertReviewWithId(db: Database, id: string, noteId: string, qua
   return { id, note_id: noteId, quality, reviewed_at: reviewedAt };
 }
 
+/** Delete all reviews belonging to a note. */
 export function deleteReviewsForNote(db: Database, noteId: string): void {
   db.run('DELETE FROM reviews WHERE note_id = ?', [noteId]);
 }

@@ -2,12 +2,14 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { IGNORED_DIRS } from '../config/constants';
 
+/** A markdown file discovered during vault scanning. */
 export interface ScannedFile {
   fullPath: string;
   relativePath: string;
   name: string;
 }
 
+/** Recursively walk the vault directory and return all `.md` files, skipping ignored directories. */
 export async function scanVault(vaultPath: string): Promise<ScannedFile[]> {
   const results: ScannedFile[] = [];
   await walkDir(vaultPath, vaultPath, results);

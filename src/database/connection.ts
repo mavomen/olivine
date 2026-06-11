@@ -11,6 +11,7 @@ async function getSql(): Promise<SqlJsStatic> {
   return SQL;
 }
 
+/** Open (or return the cached) database for the given vault path. Creates the directory and file if missing. */
 export async function getDb(vaultPath: string): Promise<SQLJsDatabase> {
   if (!db) {
     const sql = await getSql();
@@ -33,6 +34,7 @@ export async function getDb(vaultPath: string): Promise<SQLJsDatabase> {
   return db;
 }
 
+/** Persist the in-memory database to disk. */
 export function saveDb(vaultPath: string): void {
   if (!db) return;
   const dbPath = path.join(vaultPath, OLIVINE_DIR, DATABASE_FILENAME);
@@ -41,6 +43,7 @@ export function saveDb(vaultPath: string): void {
   fs.writeFileSync(dbPath, buffer);
 }
 
+/** Close the database connection and reset the cached handle. */
 export function closeDb(): void {
   if (db) {
     db.close();
@@ -48,6 +51,7 @@ export function closeDb(): void {
   }
 }
 
+/** Override the cached database handle (used in tests). */
 export function setDb(override: SQLJsDatabase): void {
   db = override;
 }

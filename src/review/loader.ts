@@ -5,6 +5,13 @@ import { createSession, type ReviewSession } from './session';
 import { logger } from '../utils/logger';
 import { todayISO } from '../utils/date';
 
+/**
+ * Loads a review session with due notes, optionally filtered by tag and limited in count.
+ * @param db - SQLite database instance
+ * @param tag - Optional tag to filter notes by
+ * @param limit - Optional maximum number of notes to include
+ * @returns A ReviewSession or null if no notes are due
+ */
 export function loadDueSession(db: Database, tag?: string, limit?: number): ReviewSession | null {
   const today = todayISO();
   const due = tag

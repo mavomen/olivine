@@ -6,6 +6,7 @@ import { todayISO } from '../utils/date';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 
+/** Build and return the `due` CLI command for showing the number of due notes. */
 export function buildDueCommand(): Command {
   return new Command('due')
     .description('Show number of due notes')

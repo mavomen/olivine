@@ -1,3 +1,4 @@
+/** The persisted scheduling state for a note. */
 export interface SchedulingState {
   box: number;
   repetitions: number;
@@ -9,6 +10,7 @@ export interface SchedulingState {
   lastReviewDate: string | null;
 }
 
+/** The result of running a scheduling algorithm. */
 export interface SchedulingResult {
   box: number;
   intervalDays: number;
@@ -20,6 +22,7 @@ export interface SchedulingResult {
   difficulty: number;
 }
 
+/** Contract that all scheduling algorithms must implement. */
 export interface SchedulingAlgorithm {
   name: string;
   schedule(quality: number, state: SchedulingState, today: string): SchedulingResult;

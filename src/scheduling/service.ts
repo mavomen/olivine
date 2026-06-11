@@ -37,6 +37,12 @@ function resultToRow(result: SchedulingResult, noteId: string, reviewedAt: strin
   };
 }
 
+/**
+ * Creates an initial scheduling record for a note if one doesn't exist.
+ * @param db - SQLite database instance
+ * @param noteId - The note ID
+ * @param algo - Optional algorithm name (defaults to config default)
+ */
 export function initializeScheduling(db: Database, noteId: string, algo?: string): void {
   const existing = getSchedulingForNote(db, noteId);
   if (existing) return;
@@ -62,6 +68,16 @@ export function initializeScheduling(db: Database, noteId: string, algo?: string
   });
 }
 
+/**
+ * Applies a review quality rating, computes the new scheduling state, and persists it.
+ * The card's stored algorithm is preserved even when an override is used for computation.
+ * @param db - SQLite database instance
+ * @param noteId - The note ID
+ * @param quality - Quality rating (0-5)
+ * @param reviewedAt - ISO date string of the review
+ * @param algorithmOverride - Optional algorithm to use for computation only
+ * @returns The updated SchedulingRow
+ */
 export function applyReview(
   db: Database,
   noteId: string,

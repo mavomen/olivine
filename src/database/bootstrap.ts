@@ -18,6 +18,7 @@ const migrations = [
   { id: m007.id, name: m007.name, sql: m007.sql },
 ];
 
+/** Run all registered migrations to bring the database schema up to date. */
 export function bootstrapDatabase(db: Database): void {
   runMigrations(db, migrations);
 }

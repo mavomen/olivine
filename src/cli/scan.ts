@@ -5,6 +5,7 @@ import { syncVault } from '../vault/sync';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 
+/** Build and return the `scan` CLI command for scanning the vault and syncing the database. */
 export function buildScanCommand(): Command {
   return new Command('scan')
     .description('Scan the vault for markdown files and sync the database')

@@ -139,6 +139,7 @@ function initialState(): SchedulingState {
   };
 }
 
+/** FSRS algorithm: three-parameter model of memory with retrievability-based scheduling. */
 export const fsrsAlgorithm: SchedulingAlgorithm = {
   name: 'fsrs',
   schedule,

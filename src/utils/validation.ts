@@ -1,5 +1,6 @@
 import { directoryExists } from './fs';
 
+/** Throw if the path is empty, whitespace-only, or does not point to an existing directory. */
 export async function validateVaultPath(vaultPath: string): Promise<void> {
   if (!vaultPath || vaultPath.trim() === '') {
     throw new Error('Vault path is required');
@@ -9,6 +10,7 @@ export async function validateVaultPath(vaultPath: string): Promise<void> {
   }
 }
 
+/** Throw if the provided config object has an invalid shape. */
 export function validateConfig(config: unknown): void {
   if (typeof config !== 'object' || config === null) {
     throw new Error('Config must be an object');

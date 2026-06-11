@@ -5,6 +5,7 @@ import { getStats, formatStats } from '../stats/formatter';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 
+/** Build and return the `stats` CLI command for displaying learning statistics. */
 export function buildStatsCommand(): Command {
   return new Command('stats')
     .description('Display learning statistics')

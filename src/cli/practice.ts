@@ -9,6 +9,7 @@ import { getStats, formatStats } from '../stats/formatter';
 import { runTuiSession } from '../tui/review/runner';
 import { listAlgorithms } from '../scheduling/registry';
 
+/** Build and return the `practice` CLI command for dry-run practice sessions. */
 export function buildPracticeCommand(): Command {
   return new Command('practice')
     .description('Practice cards without affecting scheduling')

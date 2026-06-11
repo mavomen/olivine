@@ -4,6 +4,7 @@ import { listAlgorithms } from '../scheduling/registry';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 
+/** Build and return the `config` CLI command for viewing or updating configuration. */
 export function buildConfigCommand(): Command {
   return new Command('config')
     .description('View or update configuration')

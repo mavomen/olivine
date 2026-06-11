@@ -7,12 +7,20 @@ import { applyReview } from '../../scheduling/service';
 import { todayISO } from '../../utils/date';
 import { getSchedulingForNote } from '../../models/scheduling';
 
+/** Options controlling TUI review session behavior. */
 export interface TuiOptions {
   dryRun?: boolean;
   algorithmOverride?: string;
   quality?: number;
 }
 
+/**
+ * Run an interactive review session in the terminal.
+ * @param db - The database instance.
+ * @param session - The review session to execute.
+ * @param options - Optional configuration overrides.
+ * @returns A promise that resolves when the session ends.
+ */
 export function runTuiSession(db: Database, session: ReviewSession, options: TuiOptions = {}): Promise<void> {
   if (!process.stdout.isTTY) {
     return runFallback(db, session, options);

@@ -1,5 +1,6 @@
 import blessed from 'blessed';
 
+/** Result returned when card form is submitted. */
 export interface AddCardResult {
   title: string;
   content: string;
@@ -17,6 +18,16 @@ interface UndoSnapshot {
   tCursor: number;
 }
 
+/**
+ * Open a blessed-based modal form to create or edit a card.
+ * @param cardsDir - Directory path shown in the footer.
+ * @param onSave - Called with the card data on save.
+ * @param onCancel - Called when the form is cancelled.
+ * @param initialTitle - Pre-populated question text.
+ * @param initialContent - Pre-populated answer text.
+ * @param initialTags - Pre-populated tags, comma-separated.
+ * @returns A promise that resolves when the form closes.
+ */
 export function showAddCardForm(
   cardsDir: string,
   onSave: (result: AddCardResult) => void,
