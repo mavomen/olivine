@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { loadConfig, saveConfig, defaultConfig, OlivineConfig } from '../../src/config/loader';
-import { OLIVINE_DIR, CONFIG_FILENAME } from '../../src/config/constants';
+import { OLIVINE_DIR, CONFIG_FILENAME, DEFAULT_ALGORITHM } from '../../src/config/constants';
 
 describe('config loader', () => {
   let tmpDir: string;
@@ -20,12 +20,13 @@ describe('config loader', () => {
       const config = defaultConfig();
       expect(config.vaultPath).toBe('');
       expect(config.cardsDir).toBe('');
+      expect(config.algorithm).toBe(DEFAULT_ALGORITHM);
     });
   });
 
   describe('saveConfig', () => {
     it('should create .olivine directory and config.json', async () => {
-      const config: OlivineConfig = { vaultPath: tmpDir, cardsDir: '' };
+      const config: OlivineConfig = { vaultPath: tmpDir, cardsDir: '', algorithm: DEFAULT_ALGORITHM };
       await saveConfig(tmpDir, config);
       const configPath = path.join(tmpDir, OLIVINE_DIR, CONFIG_FILENAME);
       const exists = await fs.stat(configPath).then(() => true, () => false);
@@ -38,10 +39,11 @@ describe('config loader', () => {
       const config = await loadConfig(tmpDir);
       expect(config.vaultPath).toBe(tmpDir);
       expect(config.cardsDir).toBe('');
+      expect(config.algorithm).toBe(DEFAULT_ALGORITHM);
     });
 
     it('should load saved config', async () => {
-      const saved: OlivineConfig = { vaultPath: tmpDir, cardsDir: 'my-cards' };
+      const saved: OlivineConfig = { vaultPath: tmpDir, cardsDir: 'my-cards', algorithm: 'sm2' };
       await saveConfig(tmpDir, saved);
       const config = await loadConfig(tmpDir);
       expect(config).toEqual(saved);
@@ -57,6 +59,7 @@ describe('config loader', () => {
       const config = await loadConfig(tmpDir);
       expect(config.vaultPath).toBe(tmpDir);
       expect(config.cardsDir).toBe('');
+      expect(config.algorithm).toBe(DEFAULT_ALGORITHM);
     });
   });
 });

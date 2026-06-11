@@ -9,6 +9,7 @@ import { todayISO } from '../utils/date';
 export async function runReviewSession(
   db: Database,
   session: ReviewSession,
+  algorithmOverride?: string,
 ): Promise<void> {
   const today = todayISO();
   console.log(chalk.bold(`\nStarting review session — ${session.notes.length} notes due\n`));
@@ -29,7 +30,7 @@ export async function runReviewSession(
     applyQuality(session, quality);
 
     insertReview(db, sn.note.id, quality, today);
-    applyReview(db, sn.note.id, quality, today);
+    applyReview(db, sn.note.id, quality, today, algorithmOverride);
 
     advanceNote(session);
     console.log(); // spacing

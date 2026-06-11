@@ -51,20 +51,26 @@ export function getAllNotes(db: Database): NoteRow[] {
 }
 
 export function getNotesByTag(db: Database, _tag: string): NoteRow[] {
-  const results = db.exec(`SELECT * FROM notes WHERE tags LIKE '%' || ? || '%' ORDER BY path`);
-  if (results.length === 0) return [];
-  const columns = results[0]!.columns;
-  return results[0]!.values.map((row: unknown[]) => {
-    const obj: Record<string, unknown> = {};
-    columns.forEach((col: string, i: number) => (obj[col] = row[i]));
-    return obj as unknown as NoteRow;
-  });
+  const stmt = db.prepare(`SELECT * FROM notes WHERE tags LIKE '%' || ? || '%' ORDER BY path`);
+  stmt.bind([_tag]);
+  const rows: NoteRow[] = [];
+  while (stmt.step()) {
+    rows.push(stmt.getAsObject() as unknown as NoteRow);
+  }
+  stmt.free();
+  return rows;
 }
 
 export function getNoteIdsByTag(db: Database, _tag: string): Set<string> {
-  const results = db.exec(`SELECT id FROM notes WHERE tags LIKE '%' || ? || '%'`);
-  if (results.length === 0) return new Set();
-  return new Set(results[0]!.values.map((row) => row[0] as string));
+  const stmt = db.prepare(`SELECT id FROM notes WHERE tags LIKE '%' || ? || '%'`);
+  stmt.bind([_tag]);
+  const ids = new Set<string>();
+  while (stmt.step()) {
+    const row = stmt.getAsObject() as { id: string };
+    ids.add(row.id);
+  }
+  stmt.free();
+  return ids;
 }
 
 export function deleteNote(db: Database, id: string): void {

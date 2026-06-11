@@ -9,6 +9,7 @@ import { getSchedulingForNote } from '../../models/scheduling';
 
 export interface TuiOptions {
   dryRun?: boolean;
+  algorithmOverride?: string;
 }
 
 export function runTuiSession(db: Database, session: ReviewSession, options: TuiOptions = {}): Promise<void> {
@@ -58,7 +59,7 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
           applyQuality(session, quality);
           if (!options.dryRun) {
             insertReview(db, note.note.id, quality, today);
-            applyReview(db, note.note.id, quality, today);
+            applyReview(db, note.note.id, quality, today, options.algorithmOverride);
           }
           advanceNote(session);
           renderCard(false);
@@ -126,7 +127,7 @@ async function runFallback(db: Database, session: ReviewSession, options: TuiOpt
     if (sn.reviewed) continue;
     if (!options.dryRun) {
       insertReview(db, sn.note.id, 4, today);
-      applyReview(db, sn.note.id, 4, today);
+      applyReview(db, sn.note.id, 4, today, options.algorithmOverride);
     }
     sn.quality = 4;
     sn.reviewed = true;

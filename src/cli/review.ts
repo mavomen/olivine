@@ -5,6 +5,7 @@ import { loadDueSession } from '../review/loader';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 import { getStats, formatStats } from '../stats/formatter';
+import { listAlgorithms } from '../scheduling/registry';
 
 export function buildReviewCommand(): Command {
   return new Command('review')
@@ -12,7 +13,8 @@ export function buildReviewCommand(): Command {
     .argument('<vaultPath>', 'Path to the Obsidian vault')
     .option('--tui', 'Use terminal TUI (blessed) instead of prompts')
     .option('--tag <tag>', 'Only review cards with this tag')
-    .action(async (vaultPath: string, options: { tui?: boolean; tag?: string }) => {
+    .option('--algo <algorithm>', `Algorithm override (${listAlgorithms().join(', ')})`)
+    .action(async (vaultPath: string, options: { tui?: boolean; tag?: string; algo?: string }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
@@ -29,10 +31,10 @@ export function buildReviewCommand(): Command {
 
         if (options.tui) {
           const { runTuiSession } = await import('../tui/review/runner');
-          await runTuiSession(db, session);
+          await runTuiSession(db, session, { algorithmOverride: options.algo });
         } else {
           const { runReviewSession } = await import('../review/runner');
-          await runReviewSession(db, session);
+          await runReviewSession(db, session, options.algo);
         }
 
         saveDb(vaultPath);
