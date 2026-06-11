@@ -58,6 +58,20 @@ describe('browse command', () => {
     expect(output).toContain('Browse ID Card');
   });
 
+  it('should error on --id with non-existent note', () => {
+    expect(() => execSync(`${CLI} browse "${tmpDir}" --id nonexistent`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    })).toThrow();
+  });
+
+  it('should error on --id --json with non-existent note', () => {
+    expect(() => execSync(`${CLI} browse "${tmpDir}" --id nonexistent --json`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    })).toThrow();
+  });
+
   it('should output JSON with --id --json flags', async () => {
     await fs.writeFile(path.join(tmpDir, 'json-card.md'), '# JSON Card');
     execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });

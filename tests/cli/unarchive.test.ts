@@ -34,6 +34,14 @@ describe('unarchive command', () => {
     expect(output).toContain('No archived cards.');
   });
 
+  it('should report no archived cards with --id when none archived', () => {
+    const output = execSync(`${CLI} unarchive "${tmpDir}" --id nonexistent`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    });
+    expect(output).toContain('No archived cards.');
+  });
+
   it('should reject invalid vault path', () => {
     expect(() => execSync(`${CLI} unarchive /nonexistent`, { stdio: 'pipe' })).toThrow();
   });
