@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { getDb, closeDb } from '../database/connection';
 import { bootstrapDatabase } from '../database/bootstrap';
 import { loadDueSession } from '../review/loader';
+import { shuffleSession } from '../review/session';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 import { getStats, formatStats } from '../stats/formatter';
@@ -14,13 +15,15 @@ export function buildPracticeCommand(): Command {
     .argument('<vaultPath>', 'Path to the Obsidian vault')
     .option('--tag <tag>', 'Only practice cards with this tag')
     .option('--algo <algorithm>', `Algorithm override (${listAlgorithms().join(', ')})`)
-    .action(async (vaultPath: string, options: { tag?: string; algo?: string }) => {
+    .option('--shuffle', 'Randomize card order')
+    .action(async (vaultPath: string, options: { tag?: string; algo?: string; shuffle?: boolean }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
 
         const session = loadDueSession(db, options.tag);
+        if (session && options.shuffle) shuffleSession(session);
         if (!session) {
           const stats = getStats(db);
           console.log('All caught up! No notes due for practice.');

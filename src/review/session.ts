@@ -61,3 +61,12 @@ export function sessionStats(session: ReviewSession) {
   ).length;
   return { total: session.notes.length, reviewed, failed };
 }
+
+export function shuffleSession(session: ReviewSession): void {
+  for (let i = session.notes.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = session.notes[i];
+    session.notes[i] = session.notes[j]!;
+    session.notes[j] = tmp!;
+  }
+}
