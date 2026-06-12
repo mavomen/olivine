@@ -88,4 +88,35 @@ describe('tag command', () => {
     const output = execSync(`${CLI} tag "${tmpDir}"`, { encoding: 'utf-8' });
     expect(output).toContain('No tags found.');
   });
+
+  it('should list cards with a specific tag when tagname is provided', async () => {
+    await fs.writeFile(path.join(tmpDir, 'm1.md'), '---\ntags: [math]\n---\n# Math 1\nContent');
+    await fs.writeFile(path.join(tmpDir, 'm2.md'), '---\ntags: [math]\n---\n# Math 2\nContent');
+    await fs.writeFile(path.join(tmpDir, 'c1.md'), '---\ntags: [cs]\n---\n# CS 1\nContent');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const output = execSync(`${CLI} tag "${tmpDir}" math`, { encoding: 'utf-8' });
+    expect(output).toContain('Math 1');
+    expect(output).toContain('Math 2');
+    expect(output).not.toContain('CS 1');
+  });
+
+  it('should return empty when tagname matches no cards', async () => {
+    await fs.writeFile(path.join(tmpDir, 'n.md'), '---\ntags: [math]\n---\n# N\nContent');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const output = execSync(`${CLI} tag "${tmpDir}" nonexistent`, { encoding: 'utf-8' });
+    expect(output).toContain('No cards with tag');
+  });
+
+  it('should output JSON when tagname and --json are provided', async () => {
+    await fs.writeFile(path.join(tmpDir, 'n.md'), '---\ntags: [math]\n---\n# N\nContent');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const output = execSync(`${CLI} tag "${tmpDir}" math --json`, { encoding: 'utf-8' });
+    const parsed = JSON.parse(output);
+    expect(parsed.tag).toBe('math');
+    expect(parsed.notes.length).toBe(1);
+    expect(parsed.notes[0].title).toBe('N');
+  });
 });

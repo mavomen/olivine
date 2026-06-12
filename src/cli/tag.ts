@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { Database } from 'sql.js';
 import { getDb, closeDb } from '../database/connection';
 import { bootstrapDatabase } from '../database/bootstrap';
-import { getAllNotes } from '../models/note';
+import { getAllNotes, getNotesByTag } from '../models/note';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 
@@ -45,22 +45,39 @@ function formatTagOutput(tagCounts: TagCount[], totalNotes: number): string {
 
 export function buildTagCommand(): Command {
   return new Command('tag')
-    .description('List all tags with card counts')
+    .description('List all tags with card counts, or show cards with a specific tag')
     .argument('<vaultPath>', 'Path to the Obsidian vault')
+    .argument('[tagname]', 'Show cards with this specific tag')
     .option('--json', 'Output tags as JSON')
-    .action(async (vaultPath: string, options: { json?: boolean }) => {
+    .action(async (vaultPath: string, tagname: string | undefined, options: { json?: boolean }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
 
-        const allNotes = getAllNotes(db);
-        const tagCounts = getTagCounts(db);
-
-        if (options.json) {
-          console.log(JSON.stringify({ totalNotes: allNotes.length, tags: tagCounts }, null, 2));
+        if (tagname) {
+          const notes = getNotesByTag(db, tagname);
+          if (options.json) {
+            console.log(JSON.stringify({ tag: tagname, notes: notes.map(n => ({ id: n.id, title: n.title })) }, null, 2));
+          } else {
+            if (notes.length === 0) {
+              console.log(`No cards with tag "${tagname}".`);
+            } else {
+              console.log(`Cards with tag "${tagname}" (${notes.length}):\n`);
+              for (const note of notes) {
+                console.log(`  ${note.id}: ${note.title}`);
+              }
+            }
+          }
         } else {
-          console.log(formatTagOutput(tagCounts, allNotes.length));
+          const allNotes = getAllNotes(db);
+          const tagCounts = getTagCounts(db);
+
+          if (options.json) {
+            console.log(JSON.stringify({ totalNotes: allNotes.length, tags: tagCounts }, null, 2));
+          } else {
+            console.log(formatTagOutput(tagCounts, allNotes.length));
+          }
         }
 
         closeDb();
