@@ -17,6 +17,8 @@ import { buildExportCommand } from './export';
 import { buildImportCommand } from './import';
 import { buildTagCommand } from './tag';
 import { buildTuiCommand } from './tui';
+import { buildCompletionCommand } from './completion';
+import { buildUpgradeCommand } from './upgrade';
 
 export function registerCommands(program: Command): void {
   program.addCommand(buildInitCommand());
@@ -37,4 +39,6 @@ export function registerCommands(program: Command): void {
   program.addCommand(buildImportCommand());
   program.addCommand(buildTagCommand());
   program.addCommand(buildTuiCommand());
+  program.addCommand(buildCompletionCommand());
+  program.addCommand(buildUpgradeCommand());
 }
