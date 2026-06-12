@@ -89,8 +89,9 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
 
   updateFilteredList();
 
+  let headerText = ' Browse Cards   │   /filter   b1-7:box   Enter:edit   Space:review   a:add   d:delete   h:history   q:quit';
 
-  blessed.box({
+  const header = blessed.box({
     parent: screen,
     top: 0,
     left: 0,
@@ -98,7 +99,7 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     height: 3,
     border: 'line',
     style: { border: { fg: 'cyan' }, bg: 'black' },
-    content: ' Browse Cards   │   /filter   b1-7:box   Enter:edit   Space:review   a:add   d:delete   h:history   q:quit',
+    content: headerText,
     tags: false,
   });
 
@@ -206,6 +207,14 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
     }
   });
 
+  function updateHeader() {
+    const parts = [' Browse Cards'];
+    if (state.filterText) parts.push(`  │  filter: "${state.filterText}"`);
+    if (state.filterBox !== null) parts.push(`  │  box: ${state.filterBox}`);
+    header.setContent(parts.join(''));
+    screen.render();
+  }
+
   screen.key(['/'], () => {
     const prompt = blessed.prompt({
       parent: screen,
@@ -228,7 +237,7 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
         detailBox.setContent(' No cards match the filter');
       }
       prompt.destroy();
-      screen.render();
+      updateHeader();
     });
   });
 
@@ -242,7 +251,7 @@ export function openBrowseTui(vaultPath: string, db: Database): void {
       renderDetail(state.filteredNotes[0]!);
     }
     detailBox.setContent(' Select a card to view details');
-    screen.render();
+    updateHeader();
   });
 
   screen.key(['b'], () => {

@@ -55,11 +55,27 @@ export async function runReviewSession(
   const duration = sessionDuration(session);
   const minutes = Math.floor(duration / 60000);
   const seconds = Math.floor((duration % 60000) / 1000);
+  const accuracy = stats.reviewed > 0
+    ? Math.round(((stats.reviewed - stats.failed) / stats.reviewed) * 100)
+    : 0;
+
+  const qualityHistogram: number[] = [0, 0, 0, 0, 0, 0];
+  for (const sn of session.notes) {
+    const q = sn.quality;
+    if (q !== null && q >= 0 && q <= 5) {
+      qualityHistogram[q as number] = (qualityHistogram[q as number] ?? 0) + 1;
+    }
+  }
 
   console.log(chalk.bold.green('\n=== Session Complete ==='));
   console.log(chalk.white(`Reviewed: ${stats.reviewed}/${stats.total}`));
   console.log(chalk.red(`Failed:   ${stats.failed}`));
+  console.log(chalk.gray(`Accuracy: ${accuracy}%`));
   console.log(chalk.gray(`Duration: ${minutes}m ${seconds}s`));
+  if (stats.reviewed > 0) {
+    const bar = qualityHistogram.map((c, i) => `${i}:${'█'.repeat(c)}`).join('  ');
+    console.log(chalk.gray(`Ratings:  ${bar}`));
+  }
   if (session.remainingDue > 0) {
     console.log(chalk.yellow(`${session.remainingDue} more card(s) due today.`));
   }

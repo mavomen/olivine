@@ -9,10 +9,6 @@ describe('import command', () => {
   let tmpDir: string;
   let importFile: string;
 
-  beforeAll(() => {
-    execSync('npm run build', { stdio: 'ignore', cwd: path.resolve(__dirname, '../..') });
-  });
-
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'olivine-import-test-'));
     execSync(`${CLI} init "${tmpDir}"`, { stdio: 'pipe' });

@@ -8,10 +8,6 @@ const CLI = 'node dist/index.js';
 describe('edit command', () => {
   let tmpDir: string;
 
-  beforeAll(() => {
-    execSync('npm run build', { stdio: 'ignore', cwd: path.resolve(__dirname, '../..') });
-  });
-
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'olivine-edit-test-'));
     execSync(`${CLI} init "${tmpDir}"`, { stdio: 'pipe' });

@@ -16,6 +16,7 @@ export interface CardState {
   remaining: number;
   box: number;
   algorithm?: string;
+  intervalLabel?: string;
 }
 
 /**
@@ -42,7 +43,7 @@ export function createCardBox(
     width: '80%',
     height: '70%',
     border: 'line',
-    label: ` Card no. ${card.index} of ${card.total} — ${card.remaining} remaining — Box ${card.box} `,
+    label: ` Card no. ${card.index} of ${card.total} — ${card.remaining} remaining — Box ${card.box}${card.intervalLabel ? ` — ${card.intervalLabel}` : ''} `,
     style: {
       border: { fg: 'cyan' },
       focus: { border: { fg: 'green' } },

@@ -13,9 +13,11 @@ describe('handleError', () => {
     jest.restoreAllMocks();
   });
 
-  it('should log an error with the message prefix', () => {
+  it('should log an error with the message prefix and stack trace', () => {
     handleError('Review failed', new Error('something broke'));
-    expect(errorSpy).toHaveBeenCalledWith('[ERROR] Review failed: Error: something broke');
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('[ERROR] Review failed: Error: something broke'));
+    const call = errorSpy.mock.calls[0][0] as string;
+    expect(call).toContain('\n    at ');
   });
 
   it('should handle string errors', () => {
