@@ -1,4 +1,3 @@
-cat > .github/workflows/cd.yml << 'EOF'
 name: CD
 
 on:
