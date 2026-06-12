@@ -8,10 +8,6 @@ const CLI = 'node dist/index.js';
 describe('browse command', () => {
   let tmpDir: string;
 
-  beforeAll(() => {
-    execSync('npm run build', { stdio: 'ignore', cwd: path.resolve(__dirname, '../..') });
-  });
-
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'olivine-browse-test-'));
     execSync(`${CLI} init "${tmpDir}"`, { stdio: 'pipe' });
@@ -92,6 +88,5 @@ describe('browse command', () => {
     expect(parsed.scheduling).toBeDefined();
     expect(parsed.reviews).toBeDefined();
   });
-
 
 });

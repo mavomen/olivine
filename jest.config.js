@@ -6,4 +6,5 @@ module.exports = {
   collectCoverageFrom: ['src/**/*.ts'],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov'],
+  globalSetup: '<rootDir>/tests/globalSetup.js',
 };
