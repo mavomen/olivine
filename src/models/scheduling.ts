@@ -10,6 +10,7 @@ export interface SchedulingRow {
   last_reviewed: string | null;
   box: number;
   archived: number;
+  suspended: number;
   algorithm: string;
   stability: number;
   difficulty: number;
@@ -59,7 +60,7 @@ export function getAllScheduling(db: Database): SchedulingRow[] {
 
 /** Return scheduling rows that are due on or before `today`, up to `limit` items. */
 export function getDueNotes(db: Database, today: string, limit: number): SchedulingRow[] {
-  return getAllSchedulingRows(db, 'SELECT * FROM scheduling WHERE due_date <= ? AND archived = 0 ORDER BY due_date ASC LIMIT ?', [today, limit]);
+  return getAllSchedulingRows(db, 'SELECT * FROM scheduling WHERE due_date <= ? AND archived = 0 AND suspended = 0 ORDER BY due_date ASC LIMIT ?', [today, limit]);
 }
 
 /** Return due scheduling rows that also match a given tag. */
@@ -68,7 +69,7 @@ export function getDueNotesByTag(db: Database, today: string, tag: string, limit
     db,
     `SELECT s.* FROM scheduling s
      JOIN notes n ON s.note_id = n.id
-     WHERE s.due_date <= ? AND s.archived = 0 AND n.tags LIKE '%' || ? || '%'
+     WHERE s.due_date <= ? AND s.archived = 0 AND s.suspended = 0 AND n.tags LIKE '%' || ? || '%'
      ORDER BY s.due_date ASC LIMIT ?`,
     [today, tag, limit]
   );
