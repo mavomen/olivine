@@ -7,6 +7,16 @@ import { applyReview } from '../../scheduling/service';
 import { todayISO } from '../../utils/date';
 import { getSchedulingForNote } from '../../models/scheduling';
 
+function formatIntervalLabel(intervalDays: number, dueDate: string): string {
+  const today = todayISO();
+  const diff = Math.round(
+    (new Date(dueDate).getTime() - new Date(today).getTime()) / (1000 * 60 * 60 * 24),
+  );
+  if (diff > 0) return `due in ${diff}d`;
+  if (diff === 0) return 'due today';
+  return `overdue by ${Math.abs(diff)}d`;
+}
+
 /** Options controlling TUI review session behavior. */
 export interface TuiOptions {
   dryRun?: boolean;
@@ -50,6 +60,12 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
       return getCurrentSched()?.algorithm ?? options.algorithmOverride ?? 'leitner';
     }
 
+    function getIntervalLabel(): string | undefined {
+      const sched = getCurrentSched();
+      if (!sched || sched.interval_days <= 0) return undefined;
+      return formatIntervalLabel(sched.interval_days, sched.due_date);
+    }
+
     function renderCard(revealed: boolean = false) {
       const note = currentNote(session);
       if (!note) {
@@ -59,6 +75,7 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
 
       const box = getCurrentBox();
       const algorithm = getCurrentAlgorithm();
+      const intervalLabel = getIntervalLabel();
 
       if (cardBox) cardBox.detach();
       cardBox = createCardBox(
@@ -72,6 +89,7 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
           remaining: session.notes.length - (session.currentIndex + 1),
           box,
           algorithm,
+          intervalLabel,
         },
         () => renderCard(true),
         () => renderCard(false),
@@ -95,7 +113,26 @@ export function runTuiSession(db: Database, session: ReviewSession, options: Tui
             renderCard(false);
           }
         },
-        () => showSummary(),
+        () => {
+          const confirm = blessed.question({
+            parent: screen,
+            top: 'center',
+            left: 'center',
+            height: 'shrink',
+            width: 'shrink',
+            border: 'line',
+            style: { border: { fg: 'yellow' }, bg: 'black' },
+          });
+          confirm.ask('Quit review? Progress for unreviewed cards will be lost. (y/N):', (_err: Error | null, value: string) => {
+            if (value?.toLowerCase() === 'y') {
+              confirm.destroy();
+              showSummary();
+            } else {
+              confirm.destroy();
+              screen.render();
+            }
+          });
+        },
       );
       cardBox.focus();
       screen.render();
