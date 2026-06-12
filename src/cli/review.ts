@@ -7,6 +7,7 @@ import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 import { getStats, formatStats } from '../stats/formatter';
 import { listAlgorithms } from '../scheduling/registry';
+import { loadConfig, saveConfig } from '../config/loader';
 
 /** Build and return the `review` CLI command for interactive review sessions. */
 export function buildReviewCommand(): Command {
@@ -46,6 +47,25 @@ export function buildReviewCommand(): Command {
         }
 
         saveDb(vaultPath);
+
+        if (options.algo) {
+          const config = await loadConfig(vaultPath);
+          if (config.algorithm !== options.algo && !!process.stdout.isTTY && !!process.stdin.isTTY) {
+            const { default: inquirer } = await import('inquirer');
+            const { save } = await inquirer.prompt([{
+              type: 'confirm',
+              name: 'save',
+              message: `Save "${options.algo}" as the default algorithm for this vault?`,
+              default: false,
+            }]);
+            if (save) {
+              config.algorithm = options.algo;
+              await saveConfig(vaultPath, config);
+              console.log(`Default algorithm set to "${options.algo}".`);
+            }
+          }
+        }
+
         closeDb();
       } catch (err) {
         handleError('Review failed', err);
