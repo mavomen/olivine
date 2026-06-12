@@ -9,10 +9,6 @@ const CLI = `node ${path.join(PROJECT_ROOT, 'dist/index.js')}`;
 describe('stats command', () => {
   let tmpDir: string;
 
-  beforeAll(async () => {
-    execSync('npm run build', { stdio: 'ignore', cwd: path.resolve(__dirname, '../..') });
-  });
-
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'olivine-stats-test-'));
     execSync(`${CLI} init "${tmpDir}" --algo leitner`, { stdio: 'pipe' });

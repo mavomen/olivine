@@ -9,10 +9,6 @@ const CLI = `node ${path.join(PROJECT_ROOT, 'dist/index.js')}`;
 describe('suspend command', () => {
   let tmpDir: string;
 
-  beforeAll(async () => {
-    execSync('npm run build', { stdio: 'ignore', cwd: PROJECT_ROOT });
-  });
-
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'olivine-suspend-test-'));
     execSync(`${CLI} init "${tmpDir}"`, { stdio: 'pipe' });
@@ -64,10 +60,6 @@ describe('suspend command', () => {
 
 describe('unsuspend command', () => {
   let tmpDir: string;
-
-  beforeAll(async () => {
-    execSync('npm run build', { stdio: 'ignore', cwd: PROJECT_ROOT });
-  });
 
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'olivine-unsuspend-test-'));

@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.6.0 – 2026-06-12
+
+### Added
+
+- **`olivine due --json`** — machine-readable JSON output for due card count.
+- **`olivine tag <tagname>`** — list cards with a specific tag as a positional argument.
+- **`olivine tag --rename <old>:<new>`** — rename a tag across all cards.
+- **`olivine tag --delete <tag>`** — remove a tag from all cards.
+- **Review accuracy percentage and rating histogram** — `olivine review` non-TUI summary now shows accuracy % and a quality bar chart.
+- **Algorithm override auto-save** — after `review --algo <name>`, prompts to save as the vault default.
+- **`olivine log <vault> <note-id>`** — show review history (timestamps, quality) and current scheduling state (box, interval, ease factor, stability, difficulty).
+- **`olivine suspend <vault> [--id <id>]`** — suspend a card so it's excluded from reviews until unsuspended.
+- **`olivine unsuspend <vault> [--id <id>|--all]`** — restore a suspended card back into review rotation (resets to Box 1).
+- **Suspended cards filtered from queries** — due, review, stats, and archive commands respect the `suspended` column.
+- **Database migration 008** — adds `suspended` column to the `scheduling` table.
+
+### Changed
+
+- **PRD.md** — updated command reference table with all new commands and flags.
+- **History squashed** — Phase 1 (5 commits) collapsed into a single commit for a cleaner Git log.
+
 ## v0.5.0 – 2026-06-11
 
 ### Added

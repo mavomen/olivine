@@ -9,10 +9,6 @@ const CLI = `node ${path.join(PROJECT_ROOT, 'dist/index.js')}`;
 describe('due command', () => {
   let tmpDir: string;
 
-  beforeAll(async () => {
-    execSync('npm run build', { stdio: 'ignore', cwd: PROJECT_ROOT });
-  });
-
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'olivine-due-test-'));
     execSync(`${CLI} init "${tmpDir}"`, { stdio: 'pipe' });
