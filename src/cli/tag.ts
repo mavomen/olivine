@@ -1,8 +1,8 @@
 import { Command } from 'commander';
 import { Database } from 'sql.js';
-import { getDb, closeDb } from '../database/connection';
+import { getDb, saveDb, closeDb } from '../database/connection';
 import { bootstrapDatabase } from '../database/bootstrap';
-import { getAllNotes, getNotesByTag } from '../models/note';
+import { getAllNotes, getNotesByTag, insertNote } from '../models/note';
 import { handleError } from '../utils/error';
 import { validateVaultPath } from '../utils/validation';
 
@@ -43,17 +43,65 @@ function formatTagOutput(tagCounts: TagCount[], totalNotes: number): string {
   return lines.join('\n');
 }
 
+function renameTag(db: Database, oldTag: string, newTag: string): number {
+  const notes = getNotesByTag(db, oldTag);
+  for (const note of notes) {
+    const tags: string[] = JSON.parse(note.tags || '[]');
+    const idx = tags.findIndex(t => t === oldTag);
+    if (idx !== -1) {
+      tags[idx] = newTag;
+      note.tags = JSON.stringify(tags);
+      insertNote(db, note);
+    }
+  }
+  return notes.length;
+}
+
+function deleteTag(db: Database, tag: string): number {
+  const notes = getNotesByTag(db, tag);
+  for (const note of notes) {
+    const tags: string[] = JSON.parse(note.tags || '[]');
+    const filtered = tags.filter(t => t !== tag);
+    note.tags = JSON.stringify(filtered);
+    insertNote(db, note);
+  }
+  return notes.length;
+}
+
 export function buildTagCommand(): Command {
   return new Command('tag')
     .description('List all tags with card counts, or show cards with a specific tag')
     .argument('<vaultPath>', 'Path to the Obsidian vault')
     .argument('[tagname]', 'Show cards with this specific tag')
     .option('--json', 'Output tags as JSON')
-    .action(async (vaultPath: string, tagname: string | undefined, options: { json?: boolean }) => {
+    .option('--rename <old:new>', 'Rename a tag across all cards (e.g. --rename math:mathematics)')
+    .option('--delete <tag>', 'Remove a tag from all cards')
+    .action(async (vaultPath: string, tagname: string | undefined, options: { json?: boolean; rename?: string; delete?: string }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
         bootstrapDatabase(db);
+
+        if (options.rename) {
+          const sepIdx = options.rename.indexOf(':');
+          if (sepIdx === -1) throw new Error('Usage: --rename <old>:<new> (e.g. --rename math:mathematics)');
+          const oldTag = options.rename.slice(0, sepIdx);
+          const newTag = options.rename.slice(sepIdx + 1);
+          if (!oldTag || !newTag) throw new Error('Usage: --rename <old>:<new> (e.g. --rename math:mathematics)');
+          const count = renameTag(db, oldTag, newTag);
+          saveDb(vaultPath);
+          closeDb();
+          console.log(`Renamed tag "${oldTag}" to "${newTag}" across ${count} card(s).`);
+          return;
+        }
+
+        if (options.delete) {
+          const count = deleteTag(db, options.delete);
+          saveDb(vaultPath);
+          closeDb();
+          console.log(`Removed tag "${options.delete}" from ${count} card(s).`);
+          return;
+        }
 
         if (tagname) {
           const notes = getNotesByTag(db, tagname);

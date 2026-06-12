@@ -119,4 +119,38 @@ describe('tag command', () => {
     expect(parsed.notes.length).toBe(1);
     expect(parsed.notes[0].title).toBe('N');
   });
+
+  it('should rename a tag with --rename flag', async () => {
+    await fs.writeFile(path.join(tmpDir, 'a.md'), '---\ntags: [math]\n---\n# A\nContent');
+    await fs.writeFile(path.join(tmpDir, 'b.md'), '---\ntags: [math, cs]\n---\n# B\nContent');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const renameOut = execSync(`${CLI} tag "${tmpDir}" --rename math:mathematics`, { encoding: 'utf-8' });
+    expect(renameOut).toContain('Renamed');
+
+    const output = execSync(`${CLI} tag "${tmpDir}" --json`, { encoding: 'utf-8' });
+    const parsed = JSON.parse(output);
+    expect(parsed.tags.find((t: any) => t.tag === 'mathematics')).toBeDefined();
+    expect(parsed.tags.find((t: any) => t.tag === 'math')).toBeUndefined();
+  });
+
+  it('should delete a tag with --delete flag', async () => {
+    await fs.writeFile(path.join(tmpDir, 'a.md'), '---\ntags: [math]\n---\n# A\nContent');
+    await fs.writeFile(path.join(tmpDir, 'b.md'), '---\ntags: [math, cs]\n---\n# B\nContent');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const deleteOut = execSync(`${CLI} tag "${tmpDir}" --delete math`, { encoding: 'utf-8' });
+    expect(deleteOut).toContain('Removed');
+
+    const output = execSync(`${CLI} tag "${tmpDir}"`, { encoding: 'utf-8' });
+    expect(output).toContain('cs');
+    expect(output).not.toContain('math');
+  });
+
+  it('should error with --rename when no colon separator is used', () => {
+    execSync(`${CLI} init "${tmpDir}"`, { stdio: 'pipe' });
+    expect(() =>
+      execSync(`${CLI} tag "${tmpDir}" --rename badformat`, { stdio: 'pipe' }),
+    ).toThrow();
+  });
 });
