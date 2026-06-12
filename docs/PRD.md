@@ -94,7 +94,7 @@ src/
 - **CLI framework:** Commander + Inquirer (lazy‑loaded)
 - **TUI framework:** Blessed (custom widgets built on low‑level elements)
 - **Markdown parsing:** gray‑matter with H1 fallback for titles
-- **Testing:** Jest (42 suites, 289 tests)
+- **Testing:** Jest (52 suites, 463 tests)
 - **CI/CD:** GitHub Actions (Node 20/22/24 matrix)
 
 ---
@@ -145,7 +145,7 @@ with `olivine migrate <vault> --algo <name>`.
 
 | Command                      | Description                                 |
 | ---------------------------- | ------------------------------------------- |
-| `init <vault>`                 | Bootstrap `.olivine` directory and database |
+| `init [vault]`                 | Bootstrap `.olivine` directory and database |
 | `add <vault>`                  | Create a card (TUI form with vim motions)   |
 | `scan <vault>`                 | Sync markdown files into the database       |
 | `review <vault>`               | Start a review session (prompts or TUI)     |
@@ -163,7 +163,14 @@ with `olivine migrate <vault> --algo <name>`.
 | `stats <vault>`                | Show box distribution, streak, etc.         |
 | `stats <vault> --tui`          | Full-screen TUI stats dashboard             |
 | `stats <vault> --tag <tag>`    | Stats filtered by tag                       |
+| `stats <vault> --json`         | Output statistics as JSON                   |
+| `tag <vault>`                  | List all tags with card counts              |
+| `tag <vault> <tagname>`        | List cards with a specific tag              |
+| `tag <vault> --json`           | Output tags as JSON                         |
+| `tag <vault> --rename <old>:<new>` | Rename a tag across all cards           |
+| `tag <vault> --delete <tag>`   | Remove a tag from all cards                 |
 | `due <vault>`                  | Count due cards                             |
+| `due <vault> --json`           | Output due count as JSON                    |
 | `browse <vault>`               | Browse cards (interactive list)             |
 | `browse <vault> --tui`         | Full‑screen card browser                    |
 | `browse <vault> --tag <tag>`   | Filter by tag                               |
@@ -178,6 +185,9 @@ with `olivine migrate <vault> --algo <name>`.
 | `config <vault>`               | View or update settings (`--set`)           |
 | `unarchive <vault> --id <id>`  | Unarchive a specific card                   |
 | `unarchive <vault> --all`      | Unarchive all cards                         |
+| `log <vault> <note-id>`        | Show review history and scheduling for a card |
+| `suspend <vault> [--id <id>]`  | Suspend a card (excludes from reviews)      |
+| `unsuspend <vault> [--id <id>\|--all]` | Unsuspend a card back into rotation    |
 | `migrate <vault> --algo <n>`   | Migrate all cards to a new algorithm        |
 | `export <vault>`               | Export all data as JSON                     |
 | `export <vault> --output <f>`  | Export to file                              |

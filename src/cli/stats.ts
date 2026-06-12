@@ -12,7 +12,8 @@ export function buildStatsCommand(): Command {
     .argument('<vaultPath>', 'Path to the Obsidian vault')
     .option('--tag <tag>', 'Filter statistics by tag')
     .option('--tui', 'Open the statistics dashboard (blessed TUI)')
-    .action(async (vaultPath: string, options: { tag?: string; tui?: boolean }) => {
+    .option('--json', 'Output statistics as JSON')
+    .action(async (vaultPath: string, options: { tag?: string; tui?: boolean; json?: boolean }) => {
       try {
         await validateVaultPath(vaultPath);
         const db = await getDb(vaultPath);
@@ -21,6 +22,10 @@ export function buildStatsCommand(): Command {
         if (options.tui) {
           const { openStatsTui } = await import('../tui/stats/index');
           openStatsTui(vaultPath, db, options.tag);
+        } else if (options.json) {
+          const stats = getStats(db, options.tag);
+          console.log(JSON.stringify(stats, null, 2));
+          closeDb();
         } else {
           const stats = getStats(db, options.tag);
           console.log(formatStats(stats));

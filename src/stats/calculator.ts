@@ -29,11 +29,11 @@ export function boxDistribution(db: Database, tag?: string): Record<number, numb
   if (tag) {
     sql = `SELECT s.box, COUNT(*) as count FROM scheduling s
            JOIN notes n ON s.note_id = n.id
-           WHERE s.archived = 0 AND n.tags LIKE '%' || ? || '%'
+           WHERE s.archived = 0 AND s.suspended = 0 AND n.tags LIKE '%' || ? || '%'
            GROUP BY s.box ORDER BY s.box`;
     params = [tag];
   } else {
-    sql = 'SELECT box, COUNT(*) as count FROM scheduling WHERE archived = 0 GROUP BY box ORDER BY box';
+    sql = 'SELECT box, COUNT(*) as count FROM scheduling WHERE archived = 0 AND suspended = 0 GROUP BY box ORDER BY box';
     params = [];
   }
 
