@@ -19,6 +19,9 @@ import { buildTagCommand } from './tag';
 import { buildTuiCommand } from './tui';
 import { buildCompletionCommand } from './completion';
 import { buildUpgradeCommand } from './upgrade';
+import { buildLogCommand } from './log';
+import { buildSuspendCommand } from './suspend';
+import { buildUnsuspendCommand } from './unsuspend';
 
 export function registerCommands(program: Command): void {
   program.addCommand(buildInitCommand());
@@ -41,4 +44,7 @@ export function registerCommands(program: Command): void {
   program.addCommand(buildTuiCommand());
   program.addCommand(buildCompletionCommand());
   program.addCommand(buildUpgradeCommand());
+  program.addCommand(buildLogCommand());
+  program.addCommand(buildSuspendCommand());
+  program.addCommand(buildUnsuspendCommand());
 }

@@ -54,6 +54,7 @@ describe('scheduling repository', () => {
     last_reviewed: null,
     box: 1,
     archived: 0,
+    suspended: 0,
     algorithm: 'leitner',
     stability: 0,
     difficulty: 5,
