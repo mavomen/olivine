@@ -70,6 +70,15 @@ Create a new card using the TUI vim-modal form.
 olivine add <vaultPath>
 ```
 
+### `archive`
+
+Manually archive a card before it reaches Box 7. Archived cards are excluded from reviews.
+
+```bash
+olivine archive <vaultPath>                # Interactive picker (requires TTY)
+olivine archive <vaultPath> --id <noteId>  # Archive by ID
+```
+
 ### `scan`
 
 Import all markdown files from the vault into the database. Idempotent — safe to run repeatedly.
@@ -115,6 +124,7 @@ olivine browse <vaultPath> --id <noteId>     # View a single card
 olivine browse <vaultPath> --id <noteId> --json  # Single card as JSON
 olivine browse <vaultPath> --tag math        # Filter by tag
 olivine browse <vaultPath> --all             # Include archived cards
+olivine browse <vaultPath> --sort box        # Sort by box, title, created, or due
 ```
 
 ### `edit`
@@ -144,7 +154,56 @@ Show the number of cards due for review today.
 
 ```bash
 olivine due <vaultPath>
+olivine due <vaultPath> --json              # Machine-readable JSON output
 ```
+
+### `tag`
+
+List tags and manage them across cards.
+
+```bash
+olivine tag <vaultPath>                         # List all tags with card counts
+olivine tag <vaultPath> <tagname>               # List cards with a specific tag
+olivine tag <vaultPath> --json                  # Output tags as JSON
+olivine tag <vaultPath> --rename "old:new"      # Rename a tag across all cards
+olivine tag <vaultPath> --delete math           # Remove a tag from all cards
+```
+
+### `tui`
+
+Open the landing dashboard with due count, stats, and quick-access menu.
+
+```bash
+olivine tui <vaultPath>                         # Full-screen dashboard (requires TTY)
+```
+
+### `suspend`
+
+Exclude a card from reviews without archiving it. Suspended cards stay in the database but won't appear in due counts, review sessions, or stats.
+
+```bash
+olivine suspend <vaultPath>                     # Interactive picker (requires TTY)
+olivine suspend <vaultPath> --id <noteId>       # Suspend by ID
+```
+
+### `unsuspend`
+
+Bring a suspended card back into review rotation. The card is reset to Box 1.
+
+```bash
+olivine unsuspend <vaultPath> --id <noteId>     # Unsuspend a specific card
+olivine unsuspend <vaultPath> --all             # Unsuspend all suspended cards
+```
+
+### `log`
+
+Show the full review history and current scheduling state for a card.
+
+```bash
+olivine log <vaultPath> <noteId>
+```
+
+Displays: review timestamps with quality ratings, current box, interval, ease factor, stability, difficulty, and algorithm.
 
 ### `grep`
 
