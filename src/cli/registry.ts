@@ -15,6 +15,7 @@ import { buildPracticeCommand } from './practice';
 import { buildMigrateCommand } from './migrate';
 import { buildExportCommand } from './export';
 import { buildImportCommand } from './import';
+import { buildTagCommand } from './tag';
 import { buildTuiCommand } from './tui';
 
 export function registerCommands(program: Command): void {
@@ -34,5 +35,6 @@ export function registerCommands(program: Command): void {
   program.addCommand(buildMigrateCommand());
   program.addCommand(buildExportCommand());
   program.addCommand(buildImportCommand());
+  program.addCommand(buildTagCommand());
   program.addCommand(buildTuiCommand());
 }

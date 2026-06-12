@@ -164,6 +164,8 @@ with `olivine migrate <vault> --algo <name>`.
 | `stats <vault> --tui`          | Full-screen TUI stats dashboard             |
 | `stats <vault> --tag <tag>`    | Stats filtered by tag                       |
 | `stats <vault> --json`         | Output statistics as JSON                   |
+| `tag <vault>`                  | List all tags with card counts              |
+| `tag <vault> --json`           | Output tags as JSON                         |
 | `due <vault>`                  | Count due cards                             |
 | `browse <vault>`               | Browse cards (interactive list)             |
 | `browse <vault> --tui`         | Full‑screen card browser                    |

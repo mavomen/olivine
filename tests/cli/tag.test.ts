@@ -1,0 +1,91 @@
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import { execSync } from 'node:child_process';
+
+const PROJECT_ROOT = path.resolve(__dirname, '../..');
+const CLI = `node ${path.join(PROJECT_ROOT, 'dist/index.js')}`;
+
+describe('tag command', () => {
+  let tmpDir: string;
+
+  beforeAll(async () => {
+    execSync('npm run build', { stdio: 'ignore', cwd: PROJECT_ROOT });
+  });
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'olivine-tag-test-'));
+    execSync(`${CLI} init "${tmpDir}"`, { stdio: 'pipe' });
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('should report no tags when vault is empty', () => {
+    const output = execSync(`${CLI} tag "${tmpDir}"`, { encoding: 'utf-8' });
+    expect(output).toContain('No tags found.');
+  });
+
+  it('should list tags with counts', async () => {
+    await fs.writeFile(path.join(tmpDir, 'math.md'), '---\ntags: [math]\n---\n# Math Note\nContent');
+    await fs.writeFile(path.join(tmpDir, 'cs.md'), '---\ntags: [cs]\n---\n# CS Note\nContent');
+    await fs.writeFile(path.join(tmpDir, 'math2.md'), '---\ntags: [math]\n---\n# Math Note 2\nContent');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const output = execSync(`${CLI} tag "${tmpDir}"`, { encoding: 'utf-8' });
+    expect(output).toContain('math');
+    expect(output).toContain('cs');
+    expect(output).toContain('2 cards');
+    expect(output).toContain('1 card');
+  });
+
+  it('should list tags sorted by frequency descending', async () => {
+    await fs.writeFile(path.join(tmpDir, 'a.md'), '---\ntags: [alpha]\n---\n# A\nContent');
+    await fs.writeFile(path.join(tmpDir, 'b.md'), '---\ntags: [beta]\n---\n# B\nContent');
+    await fs.writeFile(path.join(tmpDir, 'c.md'), '---\ntags: [alpha]\n---\n# C\nContent');
+    await fs.writeFile(path.join(tmpDir, 'd.md'), '---\ntags: [beta]\n---\n# D\nContent');
+    await fs.writeFile(path.join(tmpDir, 'e.md'), '---\ntags: [alpha]\n---\n# E\nContent');
+    await fs.writeFile(path.join(tmpDir, 'f.md'), '---\ntags: [gamma]\n---\n# F\nContent');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const output = execSync(`${CLI} tag "${tmpDir}"`, { encoding: 'utf-8' });
+    const lines = output.split('\n').filter(l => l.startsWith('  '));
+    expect(lines.length).toBe(3);
+    expect(lines[0]).toContain('alpha');
+    expect(lines[1]).toContain('beta');
+    expect(lines[2]).toContain('gamma');
+  });
+
+  it('should output valid JSON with --json flag', async () => {
+    await fs.writeFile(path.join(tmpDir, 'n.md'), '---\ntags: [alpha, beta]\n---\n# N\nContent');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const output = execSync(`${CLI} tag "${tmpDir}" --json`, { encoding: 'utf-8' });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveProperty('totalNotes');
+    expect(parsed).toHaveProperty('tags');
+    expect(Array.isArray(parsed.tags)).toBe(true);
+    expect(parsed.tags.length).toBe(2);
+    expect(parsed.tags[0].tag).toBe('alpha');
+    expect(parsed.tags[0].count).toBe(1);
+  });
+
+  it('should handle notes with multiple tags', async () => {
+    await fs.writeFile(path.join(tmpDir, 'multi.md'), '---\ntags: [math, cs, physics]\n---\n# Multi\nContent');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const output = execSync(`${CLI} tag "${tmpDir}"`, { encoding: 'utf-8' });
+    expect(output).toContain('math');
+    expect(output).toContain('cs');
+    expect(output).toContain('physics');
+  });
+
+  it('should handle notes without tags', async () => {
+    await fs.writeFile(path.join(tmpDir, 'untagged.md'), '# Untagged\nContent');
+    execSync(`${CLI} scan "${tmpDir}"`, { stdio: 'pipe' });
+
+    const output = execSync(`${CLI} tag "${tmpDir}"`, { encoding: 'utf-8' });
+    expect(output).toContain('No tags found.');
+  });
+});
